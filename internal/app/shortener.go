@@ -14,10 +14,10 @@ const (
 	letterCount = 6
 )
 
-func getRandomURL(longUrl string) string {
+func getRandomURL(longURL string) string {
 
 	if shortURLs == nil {
-		shortURLs = make(map[string]string, 0)
+		shortURLs = make(map[string]string)
 	}
 
 	b := make([]byte, letterCount)
@@ -26,7 +26,7 @@ func getRandomURL(longUrl string) string {
 	}
 
 	res := string(b)
-	shortURLs[longUrl] = res
+	shortURLs[longURL] = res
 
 	return res
 }
@@ -46,12 +46,11 @@ func MakeSHortURL(longUrl string) (string, error) {
 
 func GetRawURL(shortURL string) (string, error) {
 
-	if shortURLs != nil {
-		for longValue, shortValue := range shortURLs {
-			if shortValue == shortURL {
-				return longValue, nil
-			}
+	for longValue, shortValue := range shortURLs {
+		if shortValue == shortURL {
+			return longValue, nil
 		}
 	}
+
 	return "", fmt.Errorf("no URL for id = %s", shortURL)
 }
