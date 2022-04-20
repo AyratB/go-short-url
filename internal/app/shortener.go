@@ -1,6 +1,11 @@
 package shortener
 
-import "math/rand"
+import (
+	"errors"
+	"fmt"
+	"github.com/AyratB/go-short-url/internal/utils"
+	"math/rand"
+)
 
 var shortURLs map[string]string
 
@@ -26,10 +31,27 @@ func getRandomURL(longUrl string) string {
 	return res
 }
 
-func GetShortURL(longUrl string) string {
+func MakeSHortURL(longUrl string) (string, error) {
+
+	if !utils.IsValidURL(longUrl) {
+		return "", errors.New("uncorrect URL format")
+	}
+
 	shortURL, ok := shortURLs[longUrl]
 	if !ok {
 		shortURL = getRandomURL(longUrl)
 	}
-	return shortURL
+	return shortURL, nil
+}
+
+func GetRawURL(shortURL string) (string, error) {
+
+	if shortURLs != nil {
+		for longValue, shortValue := range shortURLs {
+			if shortValue == shortURL {
+				return longValue, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no URL for id = %s", shortURL)
 }
