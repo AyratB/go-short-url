@@ -44,7 +44,7 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := shortener.MakeSHortURL(string(rawURL))
+	shortURL, err := shortener.MakeShortURL(string(rawURL))
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

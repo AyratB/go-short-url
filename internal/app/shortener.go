@@ -12,6 +12,7 @@ var shortURLs map[string]string
 const (
 	letterBytes = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	letterCount = 6
+	addressHead = "http://localhost:8080"
 )
 
 func getRandomURL(longURL string) string {
@@ -31,7 +32,7 @@ func getRandomURL(longURL string) string {
 	return res
 }
 
-func MakeSHortURL(longURL string) (string, error) {
+func MakeShortURL(longURL string) (string, error) {
 
 	if !utils.IsValidURL(longURL) {
 		return "", errors.New("uncorrect URL format")
@@ -41,7 +42,8 @@ func MakeSHortURL(longURL string) (string, error) {
 	if !ok {
 		shortURL = getRandomURL(longURL)
 	}
-	return shortURL, nil
+
+	return fmt.Sprintf("%s/%s", addressHead, shortURL), nil
 }
 
 func GetRawURL(shortURL string) (string, error) {
