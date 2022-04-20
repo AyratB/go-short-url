@@ -31,15 +31,15 @@ func getRandomURL(longURL string) string {
 	return res
 }
 
-func MakeSHortURL(longUrl string) (string, error) {
+func MakeSHortURL(longURL string) (string, error) {
 
-	if !utils.IsValidURL(longUrl) {
+	if !utils.IsValidURL(longURL) {
 		return "", errors.New("uncorrect URL format")
 	}
 
-	shortURL, ok := shortURLs[longUrl]
+	shortURL, ok := shortURLs[longURL]
 	if !ok {
-		shortURL = getRandomURL(longUrl)
+		shortURL = getRandomURL(longURL)
 	}
 	return shortURL, nil
 }
