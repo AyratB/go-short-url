@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -95,6 +96,8 @@ func TestSaveURLHandler(t *testing.T) {
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
 			assert.Equal(t, tt.want.redirectURL, body)
+
+			resp.Body.Close()
 		})
 	}
 }
@@ -143,10 +146,14 @@ func TestGetURLHandler(t *testing.T) {
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 
-			resp, _ := testRequest(t, ts, tt.requestType, tt.request, nil)
+			resp, body := testRequest(t, ts, tt.requestType, tt.request, nil)
+
+			fmt.Println(body)
 
 			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
 			assert.Equal(t, tt.want.redirectURL, resp.Header.Get("Location"))
+
+			resp.Body.Close()
 		})
 	}
 }
