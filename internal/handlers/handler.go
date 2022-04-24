@@ -17,7 +17,7 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	if len(id) == 0 {
-		http.Error(w, "Need to set id", http.StatusMethodNotAllowed)
+		http.Error(w, "Need to set id", http.StatusBadRequest)
 		return
 	}
 
@@ -27,6 +27,8 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	w.Header().Set("Location", longURL)
+	w.Header().Set("content-type", "text/plain; charset=utf-8")
+
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
@@ -50,6 +52,7 @@ func SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shortURL))
 }
