@@ -3,12 +3,16 @@ package shortener
 import (
 	"errors"
 	"fmt"
+	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
 	"math/rand"
 )
 
-var shortURLs = map[string]string{
-	"https://yatest.ru": "test",
+var shortURLs map[string]string
+
+func init() {
+	s := storage.Storage{}
+	shortURLs = s.GetDB().(map[string]string)
 }
 
 const (
