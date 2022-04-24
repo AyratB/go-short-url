@@ -2,7 +2,7 @@ package handlers
 
 import (
 	shortener "github.com/AyratB/go-short-url/internal/app"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
 )
@@ -13,8 +13,7 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := chi.URLParam(r, "id")
 
 	if len(id) == 0 {
 		http.Error(w, "Need to set id", http.StatusBadRequest)
