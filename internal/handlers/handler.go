@@ -2,10 +2,17 @@ package handlers
 
 import (
 	shortener "github.com/AyratB/go-short-url/internal/app"
-	"github.com/gorilla/mux"
+	"github.com/AyratB/go-short-url/internal/storage"
+	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
 )
+
+var sh *shortener.Shortener
+
+func init() {
+	sh = shortener.GetNewShortener(&storage.Storage{})
+}
 
 func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -13,15 +20,14 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := chi.URLParam(r, "id")
 
 	if len(id) == 0 {
 		http.Error(w, "Need to set id", http.StatusBadRequest)
 		return
 	}
 
-	longURL, err := shortener.GetRawURL(id)
+	longURL, err := sh.GetRawURL(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -45,7 +51,7 @@ func SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := shortener.MakeShortURL(string(rawURL))
+	shortURL, err := sh.MakeShortURL(string(rawURL))
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

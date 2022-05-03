@@ -6,5 +6,7 @@ import (
 )
 
 func main() {
-	log.Fatal(server.Run("localhost:8080"))
+	if err := server.Run("localhost:8080"); err != nil {
+		log.Fatal(err)
+	}
 }

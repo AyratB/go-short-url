@@ -3,7 +3,7 @@ module github.com/AyratB/go-short-url
 go 1.18
 
 require (
-	github.com/gorilla/mux v1.8.0
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/stretchr/testify v1.7.1
 )
 

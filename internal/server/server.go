@@ -2,20 +2,25 @@ package server
 
 import (
 	"github.com/AyratB/go-short-url/internal/handlers"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
 )
 
 func Run(host string) error {
-	router := mux.NewRouter()
-	router.HandleFunc("/{id}", handlers.GetURLHandler)
-	router.HandleFunc("/", handlers.SaveURLHandler)
 
-	http.Handle("/", router)
+	r := chi.NewRouter()
 
-	server := &http.Server{
-		Addr: host,
-	}
+	r.Use(middleware.RequestID)
+	r.Use(middleware.StripSlashes)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	return server.ListenAndServe()
+	r.Route("/", func(r chi.Router) {
+		r.Get("/{id}", handlers.GetURLHandler)
+		r.Post("/", handlers.SaveURLHandler)
+	})
+
+	return http.ListenAndServe(host, r)
 }

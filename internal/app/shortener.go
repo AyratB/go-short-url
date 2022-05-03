@@ -3,13 +3,10 @@ package shortener
 import (
 	"errors"
 	"fmt"
+	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/utils"
 	"math/rand"
 )
-
-var shortURLs = map[string]string{
-	"https://yatest.ru": "test",
-}
 
 const (
 	letterBytes = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -17,7 +14,15 @@ const (
 	addressHead = "http://localhost:8080"
 )
 
-func getRandomURL(longURL string) string {
+func GetNewShortener(repo repositories.Repository) *Shortener {
+	return &Shortener{repo: repo}
+}
+
+type Shortener struct {
+	repo repositories.Repository
+}
+
+func (s *Shortener) getRandomURL(longURL string) string {
 
 	b := make([]byte, letterCount)
 	for i := range b {
@@ -25,26 +30,29 @@ func getRandomURL(longURL string) string {
 	}
 
 	res := string(b)
-	shortURLs[longURL] = res
+	s.repo.Set(longURL, res)
 
 	return res
 }
 
-func MakeShortURL(longURL string) (string, error) {
+func (s *Shortener) MakeShortURL(longURL string) (string, error) {
 
 	if !utils.IsValidURL(longURL) {
 		return "", errors.New("uncorrect URL format")
 	}
 
-	shortURL, ok := shortURLs[longURL]
+	shortURL, ok := s.repo.GetByKey(longURL)
+
 	if !ok {
-		shortURL = getRandomURL(longURL)
+		shortURL = s.getRandomURL(longURL)
 	}
 
 	return fmt.Sprintf("%s/%s", addressHead, shortURL), nil
 }
 
-func GetRawURL(shortURL string) (string, error) {
+func (s *Shortener) GetRawURL(shortURL string) (string, error) {
+
+	shortURLs := s.repo.GetAll()
 
 	for longValue, shortValue := range shortURLs {
 		if shortValue == shortURL {

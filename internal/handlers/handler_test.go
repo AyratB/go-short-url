@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,11 +13,21 @@ import (
 	"testing"
 )
 
+func NewRouter() chi.Router {
+	r := chi.NewRouter()
+
+	r.Route("/", func(r chi.Router) {
+		r.Get("/{id}", GetURLHandler)
+		r.Post("/", SaveURLHandler)
+	})
+	return r
+}
+
 func TestSaveURLHandler(t *testing.T) {
 
 	type want struct {
 		statusCode  int
-		resultURL   string
+		redirectURL string
 		contentType string
 	}
 
@@ -33,7 +44,7 @@ func TestSaveURLHandler(t *testing.T) {
 			body:    "https://ya.ru",
 			want: want{
 				statusCode:  http.StatusCreated,
-				resultURL:   "http://localhost:8080/rfBd67",
+				redirectURL: "http://localhost:8080/rfBd67",
 				contentType: "text/plain; charset=utf-8",
 			},
 			requestType: http.MethodPost,
@@ -44,7 +55,7 @@ func TestSaveURLHandler(t *testing.T) {
 			body:    "",
 			want: want{
 				statusCode:  http.StatusBadRequest,
-				resultURL:   "uncorrect URL format\n",
+				redirectURL: "uncorrect URL format\n",
 				contentType: "text/plain; charset=utf-8",
 			},
 			requestType: http.MethodPost,
@@ -55,8 +66,8 @@ func TestSaveURLHandler(t *testing.T) {
 			body:    "https://ya.ru",
 			want: want{
 				statusCode:  http.StatusMethodNotAllowed,
-				resultURL:   "Only POST requests are allowed by this route!\n",
-				contentType: "text/plain; charset=utf-8",
+				redirectURL: "",
+				contentType: "",
 			},
 			requestType: http.MethodDelete,
 		},
@@ -66,7 +77,7 @@ func TestSaveURLHandler(t *testing.T) {
 			body:    "/ya.ru",
 			want: want{
 				statusCode:  http.StatusBadRequest,
-				resultURL:   "uncorrect URL format\n",
+				redirectURL: "uncorrect URL format\n",
 				contentType: "text/plain; charset=utf-8",
 			},
 			requestType: http.MethodPost,
@@ -76,28 +87,17 @@ func TestSaveURLHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			request := httptest.NewRequest(tt.requestType, tt.request, strings.NewReader(tt.body))
-			request.Header.Set("Content-Type", "text/plain; charset=utf-8")
+			r := NewRouter()
+			ts := httptest.NewServer(r)
+			defer ts.Close()
 
-			w := httptest.NewRecorder()
+			resp, body := testRequest(t, ts, tt.requestType, tt.request, strings.NewReader(tt.body))
 
-			h := http.HandlerFunc(SaveURLHandler)
-			h.ServeHTTP(w, request)
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
+			assert.Equal(t, tt.want.redirectURL, body)
 
-			result := w.Result()
-
-			assert.Equal(t, tt.want.statusCode, result.StatusCode)
-
-			fmt.Println(result.Header)
-
-			assert.Equal(t, tt.want.contentType, result.Header.Get("Content-Type"))
-
-			shortenerResult, err := ioutil.ReadAll(result.Body)
-			require.NoError(t, err)
-			err = result.Body.Close()
-			require.NoError(t, err)
-
-			assert.Equal(t, tt.want.resultURL, string(shortenerResult))
+			resp.Body.Close()
 		})
 	}
 }
@@ -106,9 +106,9 @@ func TestGetURLHandler(t *testing.T) {
 
 	type want struct {
 		statusCode  int
-		resultURL   string
+		redirectURL string
 		contentType string
-		errorText   string
+		body        string
 	}
 
 	tests := []struct {
@@ -122,8 +122,7 @@ func TestGetURLHandler(t *testing.T) {
 			request: "/test",
 			want: want{
 				statusCode:  http.StatusTemporaryRedirect,
-				resultURL:   "https://yatest.ru",
-				errorText:   "",
+				redirectURL: "https://yatest.ru",
 				contentType: "text/plain; charset=utf-8",
 			},
 			requestType: http.MethodGet,
@@ -133,52 +132,51 @@ func TestGetURLHandler(t *testing.T) {
 			request: "/test",
 			want: want{
 				statusCode:  http.StatusMethodNotAllowed,
-				resultURL:   "",
-				errorText:   "Only GET requests are allowed by this route!\n",
+				redirectURL: "",
 				contentType: "",
 			},
 			requestType: http.MethodDelete,
-		},
-		{
-			name:    "negative test #3 with empty id",
-			request: "/",
-			want: want{
-				statusCode:  http.StatusBadRequest,
-				resultURL:   "",
-				errorText:   "Need to set id\n",
-				contentType: "text/plain; charset=utf-8",
-			},
-			requestType: http.MethodGet,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			request := httptest.NewRequest(tt.requestType, tt.request, nil)
+			r := NewRouter()
+			ts := httptest.NewServer(r)
+			defer ts.Close()
 
-			w := httptest.NewRecorder()
+			resp, body := testRequest(t, ts, tt.requestType, tt.request, nil)
 
-			// NEED to mock gorilla/mux
-			vars := map[string]string{
-				"id": strings.TrimPrefix(tt.request, "/"),
-			}
+			fmt.Println(body)
 
-			request = mux.SetURLVars(request, vars)
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			assert.Equal(t, tt.want.redirectURL, resp.Header.Get("Location"))
 
-			h := http.HandlerFunc(GetURLHandler)
-			h.ServeHTTP(w, request)
-
-			result := w.Result()
-
-			assert.Equal(t, tt.want.statusCode, result.StatusCode)
-			assert.Equal(t, tt.want.resultURL, result.Header.Get("Location"))
-			assert.Equal(t, tt.want.errorText, fmt.Sprint(w.Body))
-
-			_, err := ioutil.ReadAll(result.Body)
-			require.NoError(t, err)
-			err = result.Body.Close()
-			require.NoError(t, err)
+			resp.Body.Close()
 		})
 	}
+}
+
+func testRequest(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string) {
+
+	req, err := http.NewRequest(method, ts.URL+path, body)
+
+	require.NoError(t, err)
+
+	httpClient := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	resp, err := httpClient.Do(req)
+	require.NoError(t, err)
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	defer resp.Body.Close()
+
+	return resp, string(respBody)
 }
