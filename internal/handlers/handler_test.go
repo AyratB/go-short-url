@@ -47,7 +47,7 @@ func TestPostShortenURLHandlerHandler(t *testing.T) {
 			request: "/api/shorten",
 			body:    PostURLRequest{URL: "https://ya.ru"},
 			want: want{
-				statusCode:  http.StatusOK,
+				statusCode:  http.StatusCreated,
 				response:    PostURLResponse{Result: "http://localhost:8080/rfBd67"},
 				contentType: "application/json",
 			},
