@@ -57,7 +57,7 @@ func PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 
 	resp, err := json.Marshal(PostURLResponse{Result: shortURL})
 	if err != nil {
