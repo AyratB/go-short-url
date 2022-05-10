@@ -18,6 +18,7 @@ func Run(host string) error {
 	r.Use(middleware.Recoverer)
 
 	r.Route("/", func(r chi.Router) {
+		r.Post("/api/shorten", handlers.PostShortenURLHandler)
 		r.Get("/{id}", handlers.GetURLHandler)
 		r.Post("/", handlers.SaveURLHandler)
 	})
