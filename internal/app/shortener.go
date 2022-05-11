@@ -11,7 +11,6 @@ import (
 const (
 	letterBytes = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	letterCount = 6
-	addressHead = "http://localhost:8080"
 )
 
 func GetNewShortener(repo repositories.Repository) *Shortener {
@@ -47,7 +46,9 @@ func (s *Shortener) MakeShortURL(longURL string) (string, error) {
 		shortURL = s.getRandomURL(longURL)
 	}
 
-	return fmt.Sprintf("%s/%s", addressHead, shortURL), nil
+	ah := utils.GetEnvOrDefault("BASE_URL", utils.DefaultBaseUrl)
+
+	return fmt.Sprintf("%s/%s", ah, shortURL), nil
 }
 
 func (s *Shortener) GetRawURL(shortURL string) (string, error) {
