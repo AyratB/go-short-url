@@ -46,7 +46,7 @@ func (s *Shortener) MakeShortURL(longURL string) (string, error) {
 		shortURL = s.getRandomURL(longURL)
 	}
 
-	ah := utils.GetEnvOrDefault("BASE_URL", utils.DefaultBaseUrl)
+	ah := utils.GetEnvOrDefault("BASE_URL", utils.DefaultBaseURL)
 
 	return fmt.Sprintf("%s/%s", ah, shortURL), nil
 }
