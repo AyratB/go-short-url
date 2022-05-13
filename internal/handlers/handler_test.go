@@ -17,7 +17,7 @@ import (
 func NewRouter() (chi.Router, error) {
 	r := chi.NewRouter()
 
-	handler, err := NewHandler()
+	handler, _, err := NewHandler()
 	if err != nil {
 		return nil, err
 	}

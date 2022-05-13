@@ -31,6 +31,14 @@ func NewFileStorage(filePath string) (*FileStorage, error) {
 	}, nil
 }
 
+func (f *FileStorage) CloseResources() error {
+	err := f.writer.Close()
+	if err != nil {
+		return err
+	}
+	return f.reader.Close()
+}
+
 func (f *FileStorage) GetAll() (map[string]string, error) {
 	return nil, nil
 }
@@ -40,5 +48,9 @@ func (f *FileStorage) GetByKey(key string) (string, error) {
 }
 
 func (f *FileStorage) Set(key string, value string) error {
+	r := &service.Record{Key: key, Value: value}
+	if err := f.writer.Write(r); err != nil {
+		return err
+	}
 	return nil
 }

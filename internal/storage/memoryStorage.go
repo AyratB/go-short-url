@@ -24,3 +24,7 @@ func (ms *MemoryStorage) Set(key string, value string) error {
 	ms.shortURLs[key] = value
 	return nil
 }
+
+func (ms *MemoryStorage) CloseResources() error {
+	return nil
+}

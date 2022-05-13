@@ -8,7 +8,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
-	"os"
 )
 
 type PostURLRequest struct {
@@ -23,20 +22,29 @@ type Handler struct {
 	sh *shortener.Shortener
 }
 
-func NewHandler() (*Handler, error) {
+func NewHandler() (*Handler, func() error, error) {
 	var repo repositories.Repository
 	var err error
 
-	filePath := os.Getenv("FILE_STORAGE_PATH")
-	if len(filePath) == 0 {
-		repo = storage.NewMemoryStorage()
-	} else {
-		repo, err = storage.NewFileStorage(filePath)
-		if err != nil {
-			return nil, err
-		}
+	//filePath := os.Getenv("FILE_STORAGE_PATH")
+	//if len(filePath) == 0 {
+	//	repo = storage.NewMemoryStorage()
+	//} else {
+	//	repo, err = storage.NewFileStorage(filePath)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
+
+	//TODO - delete
+	filePath := "C:\\Users\\airat\\Desktop\\data.txt"
+
+	repo, err = storage.NewFileStorage(filePath)
+	if err != nil {
+		return nil, nil, err
 	}
-	return &Handler{sh: shortener.GetNewShortener(repo)}, nil
+
+	return &Handler{sh: shortener.GetNewShortener(repo)}, repo.CloseResources, nil
 }
 
 func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {

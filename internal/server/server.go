@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func Run(host string) error {
+func Run(host string) (func() error, error) {
 
 	r := chi.NewRouter()
 
@@ -17,9 +17,9 @@ func Run(host string) error {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	handler, err := handlers.NewHandler()
+	handler, closer, err := handlers.NewHandler()
 	if err != nil {
-		return err
+		return closer, err
 	}
 
 	r.Route("/", func(r chi.Router) {
@@ -28,5 +28,5 @@ func Run(host string) error {
 		r.Post("/", handler.SaveURLHandler)
 	})
 
-	return http.ListenAndServe(host, r)
+	return closer, http.ListenAndServe(host, r)
 }
