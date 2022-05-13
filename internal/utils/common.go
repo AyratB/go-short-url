@@ -3,9 +3,8 @@ package utils
 import "os"
 
 func GetEnvOrDefault(key string, defaultValue string) string {
-	v := os.Getenv(key)
-	if len(v) != 0 {
-		return v
+	if value, exists := os.LookupEnv(key); exists {
+		return value
 	}
 	return defaultValue
 }

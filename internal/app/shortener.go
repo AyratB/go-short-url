@@ -21,7 +21,7 @@ type Shortener struct {
 	repo repositories.Repository
 }
 
-func (s *Shortener) getRandomURL(longURL string) string {
+func (s *Shortener) getRandomURL(longURL string) (string, error) {
 
 	b := make([]byte, letterCount)
 	for i := range b {
@@ -29,9 +29,13 @@ func (s *Shortener) getRandomURL(longURL string) string {
 	}
 
 	res := string(b)
-	s.repo.Set(longURL, res)
+	err := s.repo.Set(longURL, res)
 
-	return res
+	if err != nil {
+		return "", err
+	}
+
+	return res, nil
 }
 
 func (s *Shortener) MakeShortURL(longURL string) (string, error) {
@@ -40,10 +44,17 @@ func (s *Shortener) MakeShortURL(longURL string) (string, error) {
 		return "", errors.New("uncorrect URL format")
 	}
 
-	shortURL, ok := s.repo.GetByKey(longURL)
+	shortURL, err := s.repo.GetByKey(longURL)
 
-	if !ok {
-		shortURL = s.getRandomURL(longURL)
+	if err != nil {
+		return "", err
+	}
+
+	if len(shortURL) == 0 {
+		shortURL, err = s.getRandomURL(longURL)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	ah := utils.GetEnvOrDefault("BASE_URL", utils.DefaultBaseURL)
@@ -53,7 +64,11 @@ func (s *Shortener) MakeShortURL(longURL string) (string, error) {
 
 func (s *Shortener) GetRawURL(shortURL string) (string, error) {
 
-	shortURLs := s.repo.GetAll()
+	shortURLs, err := s.repo.GetAll()
+
+	if err != nil {
+		return "", err
+	}
 
 	for longValue, shortValue := range shortURLs {
 		if shortValue == shortURL {

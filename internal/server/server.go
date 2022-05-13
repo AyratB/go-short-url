@@ -17,10 +17,15 @@ func Run(host string) error {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	handler, err := handlers.NewHandler()
+	if err != nil {
+		return err
+	}
+
 	r.Route("/", func(r chi.Router) {
-		r.Post("/api/shorten", handlers.PostShortenURLHandler)
-		r.Get("/{id}", handlers.GetURLHandler)
-		r.Post("/", handlers.SaveURLHandler)
+		r.Post("/api/shorten", handler.PostShortenURLHandler)
+		r.Get("/{id}", handler.GetURLHandler)
+		r.Post("/", handler.SaveURLHandler)
 	})
 
 	return http.ListenAndServe(host, r)
