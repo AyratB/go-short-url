@@ -3,10 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	shortener "github.com/AyratB/go-short-url/internal/app"
+	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
+	"os"
 )
 
 type PostURLRequest struct {
@@ -17,14 +19,28 @@ type PostURLResponse struct {
 	Result string `json:"result"`
 }
 
-var sh *shortener.Shortener
-
-func init() {
-	st := &storage.Storage{}
-	sh = shortener.GetNewShortener(st)
+type Handler struct {
+	sh *shortener.Shortener
 }
 
-func PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
+func NewHandler() (*Handler, func() error, error) {
+	var repo repositories.Repository
+	var err error
+
+	filePath := os.Getenv("FILE_STORAGE_PATH")
+	if len(filePath) == 0 {
+		repo = storage.NewMemoryStorage()
+	} else {
+		repo, err = storage.NewFileStorage(filePath)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return &Handler{sh: shortener.GetNewShortener(repo)}, repo.CloseResources, nil
+}
+
+func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed by this route!", http.StatusMethodNotAllowed)
 		return
@@ -49,7 +65,7 @@ func PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := sh.MakeShortURL(p.URL)
+	shortURL, err := h.sh.MakeShortURL(p.URL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -68,7 +84,7 @@ func PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func GetURLHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Only GET requests are allowed by this route!", http.StatusMethodNotAllowed)
 		return
@@ -81,7 +97,7 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	longURL, err := sh.GetRawURL(id)
+	longURL, err := h.sh.GetRawURL(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -92,7 +108,7 @@ func GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func SaveURLHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed by this route!", http.StatusMethodNotAllowed)
@@ -105,7 +121,7 @@ func SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := sh.MakeShortURL(string(rawURL))
+	shortURL, err := h.sh.MakeShortURL(string(rawURL))
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

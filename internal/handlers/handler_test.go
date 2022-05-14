@@ -14,15 +14,20 @@ import (
 	"testing"
 )
 
-func NewRouter() chi.Router {
+func NewRouter() (chi.Router, error) {
 	r := chi.NewRouter()
 
+	handler, _, err := NewHandler()
+	if err != nil {
+		return nil, err
+	}
+
 	r.Route("/", func(r chi.Router) {
-		r.Post("/api/shorten", PostShortenURLHandler)
-		r.Get("/{id}", GetURLHandler)
-		r.Post("/", SaveURLHandler)
+		r.Post("/api/shorten", handler.PostShortenURLHandler)
+		r.Get("/{id}", handler.GetURLHandler)
+		r.Post("/", handler.SaveURLHandler)
 	})
-	return r
+	return r, nil
 }
 
 func TestPostShortenURLHandlerHandler(t *testing.T) {
@@ -90,7 +95,9 @@ func TestPostShortenURLHandlerHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			r := NewRouter()
+			r, err := NewRouter()
+			require.NoError(t, err)
+
 			ts := httptest.NewServer(r)
 			defer ts.Close()
 

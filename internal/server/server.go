@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func Run(host string) error {
+func Run(host string) (func() error, error) {
 
 	r := chi.NewRouter()
 
@@ -17,11 +17,16 @@ func Run(host string) error {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	handler, closer, err := handlers.NewHandler()
+	if err != nil {
+		return closer, err
+	}
+
 	r.Route("/", func(r chi.Router) {
-		r.Post("/api/shorten", handlers.PostShortenURLHandler)
-		r.Get("/{id}", handlers.GetURLHandler)
-		r.Post("/", handlers.SaveURLHandler)
+		r.Post("/api/shorten", handler.PostShortenURLHandler)
+		r.Get("/{id}", handler.GetURLHandler)
+		r.Post("/", handler.SaveURLHandler)
 	})
 
-	return http.ListenAndServe(host, r)
+	return closer, http.ListenAndServe(host, r)
 }

@@ -9,7 +9,15 @@ import (
 func main() {
 	sa := utils.GetEnvOrDefault("SERVER_ADDRESS", utils.DefaultServerAddress)
 
-	if err := server.Run(sa); err != nil {
+	resourcesCloser, err := server.Run(sa)
+	defer func() {
+		if resourcesCloser != nil {
+			resourcesCloser()
+		}
+	}()
+
+	if err != nil {
+		resourcesCloser()
 		log.Fatal(err)
 	}
 }
