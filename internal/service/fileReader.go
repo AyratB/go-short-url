@@ -22,15 +22,20 @@ func NewReader(fileName string) (*Reader, error) {
 	}, nil
 }
 
-func (c *Reader) Read() (*Record, error) {
-	record := &Record{}
-	if err := c.decoder.Decode(&record); err != nil {
-		return nil, err
+func (r *Reader) ReadAll() (map[string]string, error) {
+
+	defer r.file.Close()
+
+	shortURLs := make(map[string]string)
+	var err error
+
+	for r.decoder.More() {
+		record := &Record{}
+		if err = r.decoder.Decode(&record); err != nil {
+			return nil, err
+		}
+		shortURLs[record.Key] = record.Value
 	}
 
-	return record, nil
-}
-
-func (c *Reader) Close() error {
-	return c.file.Close()
+	return shortURLs, err
 }

@@ -1,16 +1,13 @@
 package storage
 
-//var shortURLs = map[string]string{
-//	"https://yatest.ru": "test",
-//}
-
 import (
 	"github.com/AyratB/go-short-url/internal/service"
 )
 
 type FileStorage struct {
-	writer *service.Writer
-	reader *service.Reader
+	writer    *service.Writer
+	reader    *service.Reader
+	shortURLs map[string]string
 }
 
 func NewFileStorage(filePath string) (*FileStorage, error) {
@@ -25,29 +22,39 @@ func NewFileStorage(filePath string) (*FileStorage, error) {
 		return nil, err
 	}
 
+	// читаем один раз, потом работаем в памяти
+	shortURLs, err := r.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
 	return &FileStorage{
-		writer: w,
-		reader: r,
+		writer:    w,
+		reader:    r,
+		shortURLs: shortURLs,
 	}, nil
 }
 
 func (f *FileStorage) CloseResources() error {
-	err := f.writer.Close()
-	if err != nil {
-		return err
-	}
-	return f.reader.Close()
+	return f.writer.Close()
 }
 
 func (f *FileStorage) GetAll() (map[string]string, error) {
-	return nil, nil
+	return f.shortURLs, nil
 }
 
 func (f *FileStorage) GetByKey(key string) (string, error) {
-	return "", nil
+	records, err := f.GetAll()
+	if err != nil {
+		return "", err
+	}
+	return records[key], nil
 }
 
 func (f *FileStorage) Set(key string, value string) error {
+
+	f.shortURLs[key] = value
+
 	r := &service.Record{Key: key, Value: value}
 	if err := f.writer.Write(r); err != nil {
 		return err

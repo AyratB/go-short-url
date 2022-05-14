@@ -10,7 +10,11 @@ func main() {
 	sa := utils.GetEnvOrDefault("SERVER_ADDRESS", utils.DefaultServerAddress)
 
 	resourcesCloser, err := server.Run(sa)
-	defer resourcesCloser()
+	defer func() {
+		if resourcesCloser != nil {
+			resourcesCloser()
+		}
+	}()
 
 	if err != nil {
 		resourcesCloser()

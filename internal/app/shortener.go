@@ -44,6 +44,7 @@ func (s *Shortener) MakeShortURL(longURL string) (string, error) {
 		return "", errors.New("uncorrect URL format")
 	}
 
+	// check if already exists
 	shortURL, err := s.repo.GetByKey(longURL)
 
 	if err != nil {
