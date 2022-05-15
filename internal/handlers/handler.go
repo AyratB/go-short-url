@@ -68,7 +68,7 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseUrl)
+	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -124,7 +124,7 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseUrl)
+	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

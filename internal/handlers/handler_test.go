@@ -20,7 +20,7 @@ func NewRouter() (chi.Router, error) {
 
 	configs := &utils.Config{
 		ServerAddress: "localhost:8080",
-		BaseUrl:       "http://localhost:8080",
+		BaseURL:       "http://localhost:8080",
 	}
 
 	handler, _, err := NewHandler(configs)

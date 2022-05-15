@@ -7,7 +7,7 @@ import (
 
 type Config struct {
 	ServerAddress   string
-	BaseUrl         string
+	BaseURL         string
 	FileStoragePath string
 }
 
@@ -18,9 +18,9 @@ func GetConfigs() (*Config, error) {
 	if len(config.ServerAddress) == 0 {
 		flag.StringVar(&config.ServerAddress, "a", "localhost:8080", "server address")
 	}
-	config.BaseUrl = os.Getenv("BASE_URL")
-	if len(config.BaseUrl) == 0 {
-		flag.StringVar(&config.BaseUrl, "b", "http://localhost:8080", "base url")
+	config.BaseURL = os.Getenv("BASE_URL")
+	if len(config.BaseURL) == 0 {
+		flag.StringVar(&config.BaseURL, "b", "http://localhost:8080", "base url")
 	}
 	config.FileStoragePath = os.Getenv("FILE_STORAGE_PATH")
 	if len(config.FileStoragePath) == 0 {
