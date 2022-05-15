@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/AyratB/go-short-url/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,12 @@ import (
 func NewRouter() (chi.Router, error) {
 	r := chi.NewRouter()
 
-	handler, _, err := NewHandler()
+	configs := &utils.Config{
+		ServerAddress: "localhost:8080",
+		BaseURL:       "http://localhost:8080",
+	}
+
+	handler, _, err := NewHandler(configs)
 	if err != nil {
 		return nil, err
 	}

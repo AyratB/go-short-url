@@ -5,10 +5,10 @@ import (
 	shortener "github.com/AyratB/go-short-url/internal/app"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
+	"github.com/AyratB/go-short-url/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
-	"os"
 )
 
 type PostURLRequest struct {
@@ -20,24 +20,27 @@ type PostURLResponse struct {
 }
 
 type Handler struct {
-	sh *shortener.Shortener
+	sh      *shortener.Shortener
+	configs *utils.Config
 }
 
-func NewHandler() (*Handler, func() error, error) {
+func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	var repo repositories.Repository
 	var err error
 
-	filePath := os.Getenv("FILE_STORAGE_PATH")
-	if len(filePath) == 0 {
+	if len(configs.FileStoragePath) == 0 {
 		repo = storage.NewMemoryStorage()
 	} else {
-		repo, err = storage.NewFileStorage(filePath)
+		repo, err = storage.NewFileStorage(configs.FileStoragePath)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	return &Handler{sh: shortener.GetNewShortener(repo)}, repo.CloseResources, nil
+	return &Handler{
+		sh:      shortener.GetNewShortener(repo),
+		configs: configs,
+	}, repo.CloseResources, nil
 }
 
 func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +68,7 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	shortURL, err := h.sh.MakeShortURL(p.URL)
+	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -121,7 +124,7 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := h.sh.MakeShortURL(string(rawURL))
+	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

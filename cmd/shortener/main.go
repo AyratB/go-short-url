@@ -7,9 +7,13 @@ import (
 )
 
 func main() {
-	sa := utils.GetEnvOrDefault("SERVER_ADDRESS", utils.DefaultServerAddress)
 
-	resourcesCloser, err := server.Run(sa)
+	configs, err := utils.GetConfigs()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resourcesCloser, err := server.Run(configs)
 	defer func() {
 		if resourcesCloser != nil {
 			resourcesCloser()

@@ -2,12 +2,13 @@ package server
 
 import (
 	"github.com/AyratB/go-short-url/internal/handlers"
+	"github.com/AyratB/go-short-url/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
 )
 
-func Run(host string) (func() error, error) {
+func Run(configs *utils.Config) (func() error, error) {
 
 	r := chi.NewRouter()
 
@@ -17,7 +18,7 @@ func Run(host string) (func() error, error) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	handler, closer, err := handlers.NewHandler()
+	handler, closer, err := handlers.NewHandler(configs)
 	if err != nil {
 		return closer, err
 	}
@@ -28,5 +29,5 @@ func Run(host string) (func() error, error) {
 		r.Post("/", handler.SaveURLHandler)
 	})
 
-	return closer, http.ListenAndServe(host, r)
+	return closer, http.ListenAndServe(configs.ServerAddress, r)
 }
