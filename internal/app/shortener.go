@@ -38,7 +38,7 @@ func (s *Shortener) getRandomURL(longURL string) (string, error) {
 	return res, nil
 }
 
-func (s *Shortener) MakeShortURL(longURL, baseUrl string) (string, error) {
+func (s *Shortener) MakeShortURL(longURL, baseURL string) (string, error) {
 
 	if !utils.IsValidURL(longURL) {
 		return "", errors.New("uncorrect URL format")
@@ -57,7 +57,7 @@ func (s *Shortener) MakeShortURL(longURL, baseUrl string) (string, error) {
 			return "", err
 		}
 	}
-	return fmt.Sprintf("%s/%s", baseUrl, shortURL), nil
+	return fmt.Sprintf("%s/%s", baseURL, shortURL), nil
 }
 
 func (s *Shortener) GetRawURL(shortURL string) (string, error) {
