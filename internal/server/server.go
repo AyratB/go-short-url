@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/AyratB/go-short-url/internal/handlers"
+	"github.com/AyratB/go-short-url/internal/middlewares"
 	"github.com/AyratB/go-short-url/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -13,6 +14,7 @@ func Run(configs *utils.Config) (func() error, error) {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
+	r.Use(middlewares.GzipHandle)
 	r.Use(middleware.StripSlashes)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
