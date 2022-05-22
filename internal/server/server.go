@@ -15,6 +15,7 @@ func Run(configs *utils.Config) (func() error, error) {
 
 	r.Use(middleware.RequestID)
 	r.Use(middlewares.GzipHandle)
+	r.Use(middlewares.CookieHandler)
 	r.Use(middleware.StripSlashes)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
