@@ -27,6 +27,7 @@ func Run(configs *utils.Config) (func() error, error) {
 
 	r.Route("/", func(r chi.Router) {
 		r.Post("/api/shorten", handler.PostShortenURLHandler)
+		r.Get("/api/user/urls", handler.GetAllSavedURLs)
 		r.Get("/{id}", handler.GetURLHandler)
 		r.Post("/", handler.SaveURLHandler)
 	})

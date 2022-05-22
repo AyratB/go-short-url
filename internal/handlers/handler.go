@@ -80,7 +80,7 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 
 	resp, err := json.Marshal(PostURLResponse{Result: shortURL})
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -134,4 +134,33 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shortURL))
+}
+
+func (h *Handler) GetAllSavedURLs(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Only GET requests are allowed by this route!", http.StatusMethodNotAllowed)
+		return
+	}
+
+	urls, err := h.sh.GetAllURL(h.configs.BaseURL)
+	if err != nil {
+		http.Error(w, "Errors happens when get all saved URLS!", http.StatusInternalServerError)
+		return
+	}
+	if len(urls) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	resp, err := json.Marshal(urls)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(resp)
 }

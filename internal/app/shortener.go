@@ -76,3 +76,26 @@ func (s *Shortener) GetRawURL(shortURL string) (string, error) {
 
 	return "", fmt.Errorf("no URL for id = %s", shortURL)
 }
+
+type URL struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
+func (s *Shortener) GetAllURL(baseURL string) ([]*URL, error) {
+	urlsMap, err := s.repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	urls := make([]*URL, 0, len(urlsMap))
+
+	for longURL, shortURL := range urlsMap {
+		urls = append(urls, &URL{
+			ShortURL:    fmt.Sprintf("%s/%s", baseURL, shortURL),
+			OriginalURL: longURL,
+		})
+	}
+
+	return urls, nil
+}
