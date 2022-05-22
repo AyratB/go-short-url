@@ -7,7 +7,7 @@ type MemoryStorage struct {
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
 		shortURLs: map[string]string{
-			"https://yatest.ru": "test", // need for tests
+			//"https://yatest.ru": "test", // need for tests
 		},
 	}
 }
