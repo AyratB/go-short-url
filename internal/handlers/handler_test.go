@@ -152,7 +152,7 @@ func TestSaveURLHandler(t *testing.T) {
 			body:    "https://ya.ru",
 			want: want{
 				statusCode:  http.StatusCreated,
-				redirectURL: "http://localhost:8080/rfBd67",
+				redirectURL: "http://localhost:8080/ti3SMt",
 				contentType: "text/plain; charset=utf-8",
 			},
 			requestType: http.MethodPost,
