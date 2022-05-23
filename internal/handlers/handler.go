@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/AyratB/go-short-url/internal/app"
-	"github.com/AyratB/go-short-url/internal/middlewares"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
@@ -27,39 +25,54 @@ type Handler struct {
 	ReposClosers   []func() error
 }
 
-func (h *Handler) getUserShortener() (*shortener.Shortener, error) {
-
-	userID := fmt.Sprintf("%x", middlewares.UserID)
-
-	if sh, ok := h.userShorteners[userID]; ok {
-		return sh, nil
-	} else {
-
-		var repo repositories.Repository
-		var err error
-
-		if len(h.configs.FileStoragePath) == 0 {
-			repo = storage.NewMemoryStorage()
-		} else {
-			repo, err = storage.NewFileStorage(h.configs.FileStoragePath)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		h.userShorteners[userID] = shortener.GetNewShortener(repo)
-		h.ReposClosers = append(h.ReposClosers, repo.CloseResources)
-
-		return h.userShorteners[userID], nil
-	}
-}
-
 func NewHandler(configs *utils.Config) *Handler {
 	return &Handler{
 		configs:        configs,
 		userShorteners: make(map[string]*shortener.Shortener),
 		ReposClosers:   make([]func() error, 0),
 	}
+}
+
+func (h *Handler) getUserShortener() (*shortener.Shortener, error) {
+
+	//userID := fmt.Sprintf("%x", middlewares.UserID)
+	//
+	//if sh, ok := h.userShorteners[userID]; ok {
+	//	return sh, nil
+	//} else {
+	//
+	//	var repo repositories.Repository
+	//	var err error
+	//
+	//	if len(h.configs.FileStoragePath) == 0 {
+	//		repo = storage.NewMemoryStorage()
+	//	} else {
+	//		repo, err = storage.NewFileStorage(h.configs.FileStoragePath)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//	}
+	//
+	//	h.userShorteners[userID] = shortener.GetNewShortener(repo)
+	//	h.ReposClosers = append(h.ReposClosers, repo.CloseResources)
+	//
+	//	return h.userShorteners[userID], nil
+	//}
+
+	var repo repositories.Repository
+	var err error
+
+	if len(h.configs.FileStoragePath) == 0 {
+		repo = storage.NewMemoryStorage()
+	} else {
+		repo, err = storage.NewFileStorage(h.configs.FileStoragePath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return shortener.GetNewShortener(repo), nil
+
 }
 
 func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
