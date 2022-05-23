@@ -21,10 +21,10 @@ func Run(configs *utils.Config) (func() error, error) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	handler, closer, err := handlers.NewHandler(configs)
-	if err != nil {
-		return closer, err
-	}
+	handler, _, _ := handlers.NewHandler(configs)
+	//if err != nil {
+	//	return closer, err
+	//}
 
 	r.Route("/", func(r chi.Router) {
 		r.Post("/api/shorten", handler.PostShortenURLHandler)
@@ -33,5 +33,5 @@ func Run(configs *utils.Config) (func() error, error) {
 		r.Post("/", handler.SaveURLHandler)
 	})
 
-	return closer, http.ListenAndServe(configs.ServerAddress, r)
+	return nil, http.ListenAndServe(configs.ServerAddress, r)
 }
