@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/AyratB/go-short-url/internal/app"
+	"github.com/AyratB/go-short-url/internal/middlewares"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
@@ -55,31 +57,19 @@ func NewHandler(configs *utils.Config) (*Handler, error) {
 
 func (h *Handler) getUserShortener() (*shortener.Shortener, error) {
 
-	//userID := fmt.Sprintf("%x", middlewares.UserID)
-	//
-	//if sh, ok := h.userShorteners[userID]; ok {
-	//	return sh, nil
-	//} else {
-	//
-	//	var repo repositories.Repository
-	//	var err error
-	//
-	//	if len(h.configs.FileStoragePath) == 0 {
-	//		repo = storage.NewMemoryStorage()
-	//	} else {
-	//		repo, err = storage.NewFileStorage(h.configs.FileStoragePath)
-	//		if err != nil {
-	//			return nil, err
-	//		}
-	//	}
-	//
-	//	h.userShorteners[userID] = shortener.GetNewShortener(repo)
-	//	h.ReposClosers = append(h.ReposClosers, repo.CloseResources)
-	//
-	//	return h.userShorteners[userID], nil
-	//}
+	userID := fmt.Sprintf("%x", middlewares.UserID)
 
-	return shortener.GetNewShortener(h.repo), nil
+	if sh, ok := h.userShorteners[userID]; ok {
+		return sh, nil
+	} else {
+
+		h.userShorteners[userID] = shortener.GetNewShortener(h.repo)
+		//h.ReposClosers = append(h.ReposClosers, h.repo.CloseResources)
+
+		return h.userShorteners[userID], nil
+	}
+
+	//return shortener.GetNewShortener(h.repo), nil
 }
 
 func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
@@ -107,13 +97,13 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	//sh, err := h.getUserShortener()
-	//if err != nil {
-	//	http.Error(w, err.Error(), 500)
-	//	return
-	//}
+	sh, err := h.getUserShortener()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
-	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL)
+	shortURL, err := sh.MakeShortURL(p.URL, h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
