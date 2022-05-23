@@ -55,4 +55,5 @@ func GzipHandle(next http.Handler) http.Handler {
 		// передаём обработчику страницы переменную типа gzipWriter для вывода данных
 		next.ServeHTTP(gzipWriter{ResponseWriter: w, CompressedWriter: writer}, r)
 	})
+
 }
