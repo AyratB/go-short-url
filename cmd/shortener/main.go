@@ -8,20 +8,17 @@ import (
 
 func main() {
 
-	configs, err := utils.GetConfigs()
-	if err != nil {
-		log.Fatal(err)
-	}
+	handler, err := server.Run(utils.GetConfigs())
 
-	resourcesCloser, err := server.Run(configs)
 	defer func() {
-		if resourcesCloser != nil {
-			resourcesCloser()
+		for _, closers := range handler.ReposClosers {
+			err = closers()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}()
-
 	if err != nil {
-		resourcesCloser()
 		log.Fatal(err)
 	}
 }

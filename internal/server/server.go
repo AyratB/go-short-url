@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func Run(configs *utils.Config) (func() error, error) {
+func Run(configs *utils.Config) (*handlers.Handler, error) {
 
 	r := chi.NewRouter()
 
@@ -21,10 +21,7 @@ func Run(configs *utils.Config) (func() error, error) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	handler, closer, err := handlers.NewHandler(configs)
-	if err != nil {
-		return closer, err
-	}
+	handler := handlers.NewHandler(configs)
 
 	r.Route("/", func(r chi.Router) {
 		r.Post("/api/shorten", handler.PostShortenURLHandler)
@@ -33,5 +30,5 @@ func Run(configs *utils.Config) (func() error, error) {
 		r.Post("/", handler.SaveURLHandler)
 	})
 
-	return closer, http.ListenAndServe(configs.ServerAddress, r)
+	return handler, http.ListenAndServe(configs.ServerAddress, r)
 }
