@@ -24,17 +24,33 @@ type Handler struct {
 	userShorteners map[string]*shortener.Shortener
 	ReposClosers   []func() error
 
+	repo repositories.Repository
+
 	sh *shortener.Shortener
 }
 
-func NewHandler(configs *utils.Config) *Handler {
+func NewHandler(configs *utils.Config) (*Handler, error) {
+
+	var repository repositories.Repository
+	var err error
+
+	if len(configs.FileStoragePath) == 0 {
+		repository = storage.NewMemoryStorage()
+	} else {
+		repository, err = storage.NewFileStorage(configs.FileStoragePath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Handler{
 		configs:        configs,
 		userShorteners: make(map[string]*shortener.Shortener),
 		ReposClosers:   make([]func() error, 0),
+		repo:           repository,
 
 		sh: shortener.GetNewShortener(storage.NewMemoryStorage()),
-	}
+	}, nil
 }
 
 func (h *Handler) getUserShortener() (*shortener.Shortener, error) {
@@ -63,20 +79,7 @@ func (h *Handler) getUserShortener() (*shortener.Shortener, error) {
 	//	return h.userShorteners[userID], nil
 	//}
 
-	var repo repositories.Repository
-	var err error
-
-	if len(h.configs.FileStoragePath) == 0 {
-		repo = storage.NewMemoryStorage()
-	} else {
-		repo, err = storage.NewFileStorage(h.configs.FileStoragePath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return shortener.GetNewShortener(repo), nil
-
+	return shortener.GetNewShortener(h.repo), nil
 }
 
 func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {

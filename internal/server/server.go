@@ -21,7 +21,7 @@ func Run(configs *utils.Config) (*handlers.Handler, error) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	handler := handlers.NewHandler(configs)
+	handler, _ := handlers.NewHandler(configs)
 
 	r.Route("/", func(r chi.Router) {
 		r.Post("/api/shorten", handler.PostShortenURLHandler)
