@@ -22,13 +22,15 @@ type PostURLResponse struct {
 }
 
 type Handler struct {
-	configs        *utils.Config
+	configs *utils.Config
+
 	userShorteners map[string]*shortener.Shortener
-	ReposClosers   []func() error
+
+	ReposClosers []func() error
 
 	repo repositories.Repository
 
-	sh *shortener.Shortener
+	//sh *shortener.Shortener
 }
 
 func NewHandler(configs *utils.Config) (*Handler, error) {
@@ -51,7 +53,7 @@ func NewHandler(configs *utils.Config) (*Handler, error) {
 		ReposClosers:   make([]func() error, 0),
 		repo:           repository,
 
-		sh: shortener.GetNewShortener(storage.NewMemoryStorage()),
+		//sh: shortener.GetNewShortener(storage.NewMemoryStorage()),
 	}, nil
 }
 
@@ -97,13 +99,13 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	//sh, err := h.getUserShortener()
-	//if err != nil {
-	//	http.Error(w, err.Error(), 500)
-	//	return
-	//}
+	sh, err := h.getUserShortener()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
-	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL)
+	shortURL, err := sh.MakeShortURL(p.URL, h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -190,13 +192,13 @@ func (h *Handler) GetAllSavedURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//sh, err := h.getUserShortener()
-	//if err != nil {
-	//	http.Error(w, err.Error(), 500)
-	//	return
-	//}
+	sh, err := h.getUserShortener()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
-	urls, err := h.sh.GetAllURL(h.configs.BaseURL)
+	urls, err := sh.GetAllURL(h.configs.BaseURL)
 	if err != nil {
 		http.Error(w, "Errors happens when get all saved URLS!", http.StatusInternalServerError)
 		return
