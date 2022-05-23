@@ -23,6 +23,8 @@ type Handler struct {
 	configs        *utils.Config
 	userShorteners map[string]*shortener.Shortener
 	ReposClosers   []func() error
+
+	sh *shortener.Shortener
 }
 
 func NewHandler(configs *utils.Config) *Handler {
@@ -30,6 +32,8 @@ func NewHandler(configs *utils.Config) *Handler {
 		configs:        configs,
 		userShorteners: make(map[string]*shortener.Shortener),
 		ReposClosers:   make([]func() error, 0),
+
+		sh: shortener.GetNewShortener(storage.NewMemoryStorage()),
 	}
 }
 
@@ -100,13 +104,13 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	//sh, err := h.getUserShortener()
+	//if err != nil {
+	//	http.Error(w, err.Error(), 500)
+	//	return
+	//}
 
-	shortURL, err := sh.MakeShortURL(p.URL, h.configs.BaseURL)
+	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -138,13 +142,13 @@ func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	//sh, err := h.getUserShortener()
+	//if err != nil {
+	//	http.Error(w, err.Error(), 500)
+	//	return
+	//}
 
-	longURL, err := sh.GetRawURL(id)
+	longURL, err := h.sh.GetRawURL(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -168,13 +172,13 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	//sh, err := h.getUserShortener()
+	//if err != nil {
+	//	http.Error(w, err.Error(), 500)
+	//	return
+	//}
 
-	shortURL, err := sh.MakeShortURL(string(rawURL), h.configs.BaseURL)
+	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -193,13 +197,13 @@ func (h *Handler) GetAllSavedURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	//sh, err := h.getUserShortener()
+	//if err != nil {
+	//	http.Error(w, err.Error(), 500)
+	//	return
+	//}
 
-	urls, err := sh.GetAllURL(h.configs.BaseURL)
+	urls, err := h.sh.GetAllURL(h.configs.BaseURL)
 	if err != nil {
 		http.Error(w, "Errors happens when get all saved URLS!", http.StatusInternalServerError)
 		return
