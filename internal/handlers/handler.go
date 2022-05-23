@@ -165,13 +165,13 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//sh, err := h.getUserShortener()
-	//if err != nil {
-	//	http.Error(w, err.Error(), 500)
-	//	return
-	//}
+	sh, err := h.getUserShortener()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
-	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseURL)
+	shortURL, err := sh.MakeShortURL(string(rawURL), h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
