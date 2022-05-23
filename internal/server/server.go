@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func Run(configs *utils.Config) (func() error, error) {
+func Run(configs *utils.Config) (*handlers.Handler, error) {
 
 	r := chi.NewRouter()
 
@@ -33,5 +33,5 @@ func Run(configs *utils.Config) (func() error, error) {
 		r.Post("/", handler.SaveURLHandler)
 	})
 
-	return nil, http.ListenAndServe(configs.ServerAddress, r)
+	return handler, http.ListenAndServe(configs.ServerAddress, r)
 }
