@@ -97,13 +97,13 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	//sh, err := h.getUserShortener()
+	//if err != nil {
+	//	http.Error(w, err.Error(), 500)
+	//	return
+	//}
 
-	shortURL, err := sh.MakeShortURL(p.URL, h.configs.BaseURL)
+	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -135,13 +135,13 @@ func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//sh, err := h.getUserShortener()
-	//if err != nil {
-	//	http.Error(w, err.Error(), 500)
-	//	return
-	//}
+	sh, err := h.getUserShortener()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
-	longURL, err := h.sh.GetRawURL(id)
+	longURL, err := sh.GetRawURL(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
