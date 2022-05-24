@@ -55,7 +55,7 @@ func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 				currentUser = decoded
 			}
 		}
-		ctx := context.WithValue(r.Context(), "CurrentUser", currentUser)
+		ctx := context.WithValue(r.Context(), utils.CurrentUser, currentUser)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
