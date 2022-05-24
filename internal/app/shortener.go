@@ -21,7 +21,7 @@ type Shortener struct {
 	repo repositories.Repository
 }
 
-func (s *Shortener) getRandomURL(longURL string) (string, error) {
+func (s *Shortener) getRandomURL(longURL, userID string) (string, error) {
 
 	b := make([]byte, letterCount)
 	for i := range b {
@@ -29,7 +29,7 @@ func (s *Shortener) getRandomURL(longURL string) (string, error) {
 	}
 
 	res := string(b)
-	err := s.repo.Set(longURL, res)
+	err := s.repo.Set(longURL, res, userID)
 
 	if err != nil {
 		return "", err
@@ -38,21 +38,21 @@ func (s *Shortener) getRandomURL(longURL string) (string, error) {
 	return res, nil
 }
 
-func (s *Shortener) MakeShortURL(longURL, baseURL string) (string, error) {
+func (s *Shortener) MakeShortURL(longURL, baseURL, userID string) (string, error) {
 
 	if !utils.IsValidURL(longURL) {
 		return "", errors.New("uncorrect URL format")
 	}
 
 	// check if already exists
-	shortURL, err := s.repo.GetByKey(longURL)
+	shortURL, err := s.repo.GetByKey(longURL, userID)
 
 	if err != nil {
 		return "", err
 	}
 
 	if len(shortURL) == 0 {
-		shortURL, err = s.getRandomURL(longURL)
+		shortURL, err = s.getRandomURL(longURL, userID)
 		if err != nil {
 			return "", err
 		}
@@ -60,9 +60,9 @@ func (s *Shortener) MakeShortURL(longURL, baseURL string) (string, error) {
 	return fmt.Sprintf("%s/%s", baseURL, shortURL), nil
 }
 
-func (s *Shortener) GetRawURL(shortURL string) (string, error) {
+func (s *Shortener) GetRawURL(shortURL, userID string) (string, error) {
 
-	shortURLs, err := s.repo.GetAll()
+	shortURLs, err := s.repo.GetAll(userID)
 
 	if err != nil {
 		return "", err
@@ -82,8 +82,8 @@ type URL struct {
 	OriginalURL string `json:"original_url"`
 }
 
-func (s *Shortener) GetAllURL(baseURL string) ([]*URL, error) {
-	urlsMap, err := s.repo.GetAll()
+func (s *Shortener) GetAllURL(baseURL, userID string) ([]*URL, error) {
+	urlsMap, err := s.repo.GetAll(userID)
 	if err != nil {
 		return nil, err
 	}

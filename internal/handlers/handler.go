@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/AyratB/go-short-url/internal/app"
-	"github.com/AyratB/go-short-url/internal/middlewares"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
@@ -22,45 +21,28 @@ type PostURLResponse struct {
 }
 
 type Handler struct {
-	configs        *utils.Config
-	userShorteners map[string]*shortener.Shortener
-	ReposClosers   []func() error
+	configs *utils.Config
+	sh      *shortener.Shortener
 }
 
-func NewHandler(configs *utils.Config) (*Handler, error) {
-	return &Handler{
-		configs:        configs,
-		userShorteners: make(map[string]*shortener.Shortener),
-		ReposClosers:   make([]func() error, 0),
-	}, nil
-}
+func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 
-func (h *Handler) getUserShortener() (*shortener.Shortener, error) {
+	var repo repositories.Repository
+	var err error
 
-	userID := fmt.Sprintf("%x", middlewares.UserID)
-
-	if sh, ok := h.userShorteners[userID]; ok {
-		return sh, nil
+	if len(configs.FileStoragePath) == 0 {
+		repo = storage.NewMemoryStorage()
 	} else {
-
-		var repository repositories.Repository
-		var err error
-
-		if len(h.configs.FileStoragePath) == 0 {
-			repository = storage.NewMemoryStorage()
-		} else {
-			repository, err = storage.NewFileStorage(h.configs.FileStoragePath)
-			if err != nil {
-				return nil, err
-			}
+		repo, err = storage.NewFileStorage(configs.FileStoragePath)
+		if err != nil {
+			return nil, nil, err
 		}
-
-		h.userShorteners[userID] = shortener.GetNewShortener(repository)
-		//h.ReposClosers = append(h.ReposClosers, h.repo.CloseResources)
-
-		return h.userShorteners[userID], nil
 	}
-	//return shortener.GetNewShortener(h.repo), nil
+
+	return &Handler{
+		sh:      shortener.GetNewShortener(repo),
+		configs: configs,
+	}, repo.CloseResources, nil
 }
 
 func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
@@ -88,13 +70,9 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
-	shortURL, err := sh.MakeShortURL(p.URL, h.configs.BaseURL)
+	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL, userID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -126,13 +104,9 @@ func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
-	longURL, err := sh.GetRawURL(id)
+	longURL, err := h.sh.GetRawURL(id, userID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -156,13 +130,9 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
-	shortURL, err := sh.MakeShortURL(string(rawURL), h.configs.BaseURL)
+	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseURL, userID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -181,13 +151,9 @@ func (h *Handler) GetAllSavedURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sh, err := h.getUserShortener()
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
-	urls, err := sh.GetAllURL(h.configs.BaseURL)
+	urls, err := h.sh.GetAllURL(h.configs.BaseURL, userID)
 	if err != nil {
 		http.Error(w, "Errors happens when get all saved URLS!", http.StatusInternalServerError)
 		return

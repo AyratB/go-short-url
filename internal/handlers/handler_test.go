@@ -24,7 +24,7 @@ func NewRouter() (chi.Router, error) {
 		BaseURL:       "http://localhost:8080",
 	}
 
-	handler, _ := NewHandler(configs)
+	handler, _, _ := NewHandler(configs)
 
 	r.Route("/", func(r chi.Router) {
 		r.Post("/api/shorten", handler.PostShortenURLHandler)

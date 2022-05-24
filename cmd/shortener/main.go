@@ -8,16 +8,15 @@ import (
 
 func main() {
 
-	_, err := server.Run(utils.GetConfigs())
-	//defer func() {
-	//	if resourcesCloser != nil {
-	//		resourcesCloser()
-	//	}
-	//}()
+	resourcesCloser, err := server.Run(utils.GetConfigs())
+	defer func() {
+		if resourcesCloser != nil {
+			resourcesCloser()
+		}
+	}()
 
 	if err != nil {
-		//resourcesCloser()
+		resourcesCloser()
 		log.Fatal(err)
 	}
-
 }

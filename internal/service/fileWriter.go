@@ -6,8 +6,9 @@ import (
 )
 
 type Record struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	UserID string `json:"user_id"`
 }
 
 type Writer struct {

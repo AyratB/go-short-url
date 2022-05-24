@@ -41,6 +41,8 @@ func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 
 			http.SetCookie(w, newCookie)
 			r.AddCookie(newCookie)
+
+			currentUser = userID
 		} else if err != nil {
 			http.Error(w, "Cookie crumbled", http.StatusInternalServerError)
 		} else {
@@ -52,7 +54,6 @@ func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 			if len(decoded) != 0 {
 				currentUser = decoded
 			}
-
 		}
 		ctx := context.WithValue(r.Context(), "CurrentUser", currentUser)
 		next.ServeHTTP(w, r.WithContext(ctx))
