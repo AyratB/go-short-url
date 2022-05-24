@@ -1,97 +1,60 @@
 package middlewares
 
 import (
-	"crypto/hmac"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
+	"context"
 	"errors"
-	"fmt"
+	"github.com/AyratB/go-short-url/internal/utils"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
-var (
+type CookieHandler struct {
+	decoder *utils.Decoder
+}
+
+func NewCookieHandler(decoder *utils.Decoder) *CookieHandler {
+	return &CookieHandler{decoder: decoder}
+}
+
+const (
 	cookieUserName = "UserID"
-	UserID         []byte
-	secretKey      []byte
-	UsersTokens    = make(map[string]struct{})
 )
 
-func generateRandom(size int) ([]byte, error) {
-	b := make([]byte, size)
-	_, err := rand.Read(b)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
-}
-
-func checkCookie(r *http.Request) (bool, error) {
-
-	cookie, err := r.Cookie(cookieUserName)
-
-	if errors.Is(err, http.ErrNoCookie) {
-		return false, nil
-	}
-
-	data, err := hex.DecodeString(cookie.Value)
-	if err != nil {
-		return false, err
-	}
-
-	h := hmac.New(sha256.New, secretKey)
-	h.Write(data[:4])
-
-	sign := h.Sum(nil)
-
-	if hmac.Equal(sign, data[4:]) {
-		if _, ok := UsersTokens[fmt.Sprintf("%x", UserID)]; ok {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func CookieHandler(next http.Handler) http.Handler {
+func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		isCookieCorrect, err := checkCookie(r)
+		cookie, err := r.Cookie(cookieUserName)
+		var currentUser = ""
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		if errors.Is(err, http.ErrNoCookie) {
 
-		if !isCookieCorrect {
+			userID := uuid.New().String()
 
-			UserID, err = generateRandom(4)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			token := c.decoder.EnCode(userID)
 
-			if len(secretKey) == 0 {
-				secretKey, err = generateRandom(16)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			}
-
-			h := hmac.New(sha256.New, secretKey)
-			h.Write(UserID)
-
-			dst := h.Sum(nil)
-
-			UsersTokens[fmt.Sprintf("%x", UserID)] = struct{}{}
-
-			http.SetCookie(w, &http.Cookie{
+			newCookie := &http.Cookie{
 				Name:  cookieUserName,
-				Value: fmt.Sprintf("%x", UserID) + fmt.Sprintf("%x", dst),
-			})
-		}
+				Value: token,
+				Path:  "/",
+			}
 
-		next.ServeHTTP(w, r)
+			http.SetCookie(w, newCookie)
+			r.AddCookie(newCookie)
+		} else if err != nil {
+			http.Error(w, "Cookie crumbled", http.StatusInternalServerError)
+		} else {
+			decoded, err := c.decoder.Decode(cookie.Value)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+			}
+
+			if len(decoded) != 0 {
+				currentUser = decoded
+			}
+
+		}
+		ctx := context.WithValue(r.Context(), "CurrentUser", currentUser)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
