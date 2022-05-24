@@ -36,10 +36,10 @@ func (r *Reader) ReadAll() (map[string]map[string]string, error) {
 		}
 
 		if userData, ok := shortURLs[record.UserID]; ok {
-			userData[record.Key] = record.Value
+			userData[record.OriginalURL] = record.ShortenURL
 		} else {
 			shortURLs[record.UserID] = make(map[string]string)
-			shortURLs[record.UserID][record.Key] = record.Value
+			shortURLs[record.UserID][record.OriginalURL] = record.ShortenURL
 		}
 	}
 

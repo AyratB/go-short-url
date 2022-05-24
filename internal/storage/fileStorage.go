@@ -39,31 +39,33 @@ func (f *FileStorage) CloseResources() error {
 	return f.writer.Close()
 }
 
-func (f *FileStorage) GetAll(userID string) (map[string]string, error) {
-	return f.shortUserURLs[userID], nil
+func (f *FileStorage) GetAll() map[string]map[string]string {
+	return f.shortUserURLs
 }
 
-func (f *FileStorage) GetByKey(key, userID string) (string, error) {
-	records, err := f.GetAll(userID)
-	if err != nil {
-		return "", err
+func (f *FileStorage) GetByOriginalURLForUser(originalURL, userID string) (string, error) {
+	urls := f.GetAll()
+
+	if usersURLs, ok := urls[userID]; ok {
+		return usersURLs[originalURL], nil
 	}
-	return records[key], nil
+
+	return "", nil
 }
 
-func (f *FileStorage) Set(key, value, userID string) error {
+func (f *FileStorage) Set(originalURL, shortenURL, userID string) error {
 
 	if userURLs, ok := f.shortUserURLs[userID]; ok {
-		userURLs[key] = value
+		userURLs[originalURL] = shortenURL
 	} else {
 		f.shortUserURLs[userID] = make(map[string]string)
-		f.shortUserURLs[userID][key] = value
+		f.shortUserURLs[userID][originalURL] = shortenURL
 	}
 
 	r := &service.Record{
-		Key:    key,
-		Value:  value,
-		UserID: userID,
+		OriginalURL: originalURL,
+		ShortenURL:  shortenURL,
+		UserID:      userID,
 	}
 	if err := f.writer.Write(r); err != nil {
 		return err

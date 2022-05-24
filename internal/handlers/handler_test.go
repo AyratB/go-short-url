@@ -27,9 +27,9 @@ func NewRouter() (chi.Router, error) {
 	handler, _, _ := NewHandler(configs)
 
 	r.Route("/", func(r chi.Router) {
-		r.Post("/api/shorten", handler.PostShortenURLHandler)
+		r.Post("/api/shorten", handler.SaveJSONURLHandler)
 		r.Get("/{id}", handler.GetURLHandler)
-		r.Post("/", handler.SaveURLHandler)
+		r.Post("/", handler.SaveBodyURLHandler)
 	})
 	return r, nil
 }

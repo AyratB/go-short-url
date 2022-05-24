@@ -45,7 +45,7 @@ func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	}, repo.CloseResources, nil
 }
 
-func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed by this route!", http.StatusMethodNotAllowed)
 		return
@@ -97,27 +97,25 @@ func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := chi.URLParam(r, "id")
+	shortenURL := chi.URLParam(r, "id")
 
-	if len(id) == 0 {
+	if len(shortenURL) == 0 {
 		http.Error(w, "Need to set id", http.StatusBadRequest)
 		return
 	}
 
-	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
-
-	longURL, err := h.sh.GetRawURL(id, userID)
+	originalURL, err := h.sh.GetOriginalURL(shortenURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	w.Header().Set("Location", longURL)
+	w.Header().Set("Location", originalURL)
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed by this route!", http.StatusMethodNotAllowed)
@@ -144,7 +142,8 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(shortURL))
 }
 
-func (h *Handler) GetAllSavedURLs(w http.ResponseWriter, r *http.Request) {
+// здесь нужен USERID
+func (h *Handler) GetAllSavedUserURLs(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
 		http.Error(w, "Only GET requests are allowed by this route!", http.StatusMethodNotAllowed)
@@ -153,7 +152,9 @@ func (h *Handler) GetAllSavedURLs(w http.ResponseWriter, r *http.Request) {
 
 	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
-	urls, err := h.sh.GetAllURL(h.configs.BaseURL, userID)
+	// получаем все урлы
+	urls, err := h.sh.GetAllSavedUserURLs(h.configs.BaseURL, userID)
+
 	if err != nil {
 		http.Error(w, "Errors happens when get all saved URLS!", http.StatusInternalServerError)
 		return

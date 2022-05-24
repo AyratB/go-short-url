@@ -30,10 +30,10 @@ func Run(configs *utils.Config) (func() error, error) {
 	}
 
 	r.Route("/", func(r chi.Router) {
-		r.Post("/api/shorten", handler.PostShortenURLHandler)
-		r.Get("/api/user/urls", handler.GetAllSavedURLs)
+		r.Post("/api/shorten", handler.SaveJSONURLHandler)
+		r.Get("/api/user/urls", handler.GetAllSavedUserURLs)
 		r.Get("/{id}", handler.GetURLHandler)
-		r.Post("/", handler.SaveURLHandler)
+		r.Post("/", handler.SaveBodyURLHandler)
 	})
 
 	return resourcesCloser, http.ListenAndServe(configs.ServerAddress, r)

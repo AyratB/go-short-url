@@ -1,7 +1,7 @@
 package storage
 
 type MemoryStorage struct {
-	shortUserURLs map[string]map[string]string
+	shortUserURLs map[string]map[string]string // user ID  : Original : shortURL
 }
 
 func NewMemoryStorage() *MemoryStorage {
@@ -10,25 +10,27 @@ func NewMemoryStorage() *MemoryStorage {
 	}
 }
 
-func (ms *MemoryStorage) GetAll(userID string) (map[string]string, error) {
-	return ms.shortUserURLs[userID], nil
+func (ms *MemoryStorage) GetAll() map[string]map[string]string {
+	return ms.shortUserURLs
 }
 
-func (ms *MemoryStorage) GetByKey(key, userID string) (string, error) {
+func (ms *MemoryStorage) GetByOriginalURLForUser(originalURL, userID string) (string, error) {
+	urls := ms.GetAll()
 
-	if ms.shortUserURLs[userID] != nil {
-		return ms.shortUserURLs[userID][key], nil
+	if usersURLs, ok := urls[userID]; ok {
+		return usersURLs[originalURL], nil
 	}
+
 	return "", nil
 }
 
-func (ms *MemoryStorage) Set(key, value, userID string) error {
+func (ms *MemoryStorage) Set(originalURL, shortenURL, userID string) error {
 
 	if userURLs, ok := ms.shortUserURLs[userID]; ok {
-		userURLs[key] = value
+		userURLs[originalURL] = shortenURL
 	} else {
 		ms.shortUserURLs[userID] = make(map[string]string)
-		ms.shortUserURLs[userID][key] = value
+		ms.shortUserURLs[userID][originalURL] = shortenURL
 	}
 	return nil
 }

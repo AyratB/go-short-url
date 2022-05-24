@@ -6,9 +6,9 @@ import (
 )
 
 type Record struct {
-	Key    string `json:"key"`
-	Value  string `json:"value"`
-	UserID string `json:"user_id"`
+	OriginalURL string `json:"original_url"`
+	ShortenURL  string `json:"shorten_url"`
+	UserID      string `json:"user_id"`
 }
 
 type Writer struct {
