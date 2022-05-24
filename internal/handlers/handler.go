@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	shortener "github.com/AyratB/go-short-url/internal/app"
+	"fmt"
+	"github.com/AyratB/go-short-url/internal/app"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
@@ -20,11 +21,12 @@ type PostURLResponse struct {
 }
 
 type Handler struct {
-	sh      *shortener.Shortener
 	configs *utils.Config
+	sh      *shortener.Shortener
 }
 
 func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
+
 	var repo repositories.Repository
 	var err error
 
@@ -43,7 +45,7 @@ func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	}, repo.CloseResources, nil
 }
 
-func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed by this route!", http.StatusMethodNotAllowed)
 		return
@@ -68,7 +70,9 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL)
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+
+	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL, userID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -80,7 +84,7 @@ func (h *Handler) PostShortenURLHandler(w http.ResponseWriter, r *http.Request) 
 
 	resp, err := json.Marshal(PostURLResponse{Result: shortURL})
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -93,25 +97,25 @@ func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := chi.URLParam(r, "id")
+	shortenURL := chi.URLParam(r, "id")
 
-	if len(id) == 0 {
+	if len(shortenURL) == 0 {
 		http.Error(w, "Need to set id", http.StatusBadRequest)
 		return
 	}
 
-	longURL, err := h.sh.GetRawURL(id)
+	originalURL, err := h.sh.GetOriginalURL(shortenURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	w.Header().Set("Location", longURL)
+	w.Header().Set("Location", originalURL)
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed by this route!", http.StatusMethodNotAllowed)
@@ -124,7 +128,9 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseURL)
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+
+	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseURL, userID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -134,4 +140,38 @@ func (h *Handler) SaveURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shortURL))
+}
+
+// здесь нужен USERID
+func (h *Handler) GetAllSavedUserURLs(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Only GET requests are allowed by this route!", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+
+	// получаем все урлы
+	urls, err := h.sh.GetAllSavedUserURLs(h.configs.BaseURL, userID)
+
+	if err != nil {
+		http.Error(w, "Errors happens when get all saved URLS!", http.StatusInternalServerError)
+		return
+	}
+	if len(urls) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	resp, err := json.Marshal(urls)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(resp)
 }

@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -23,15 +24,12 @@ func NewRouter() (chi.Router, error) {
 		BaseURL:       "http://localhost:8080",
 	}
 
-	handler, _, err := NewHandler(configs)
-	if err != nil {
-		return nil, err
-	}
+	handler, _, _ := NewHandler(configs)
 
 	r.Route("/", func(r chi.Router) {
-		r.Post("/api/shorten", handler.PostShortenURLHandler)
+		r.Post("/api/shorten", handler.SaveJSONURLHandler)
 		r.Get("/{id}", handler.GetURLHandler)
-		r.Post("/", handler.SaveURLHandler)
+		r.Post("/", handler.SaveBodyURLHandler)
 	})
 	return r, nil
 }
@@ -130,140 +128,140 @@ func TestPostShortenURLHandlerHandler(t *testing.T) {
 	}
 }
 
-//func TestSaveURLHandler(t *testing.T) {
-//
-//	type want struct {
-//		statusCode  int
-//		redirectURL string
-//		contentType string
-//	}
-//
-//	tests := []struct {
-//		name        string
-//		request     string
-//		body        string
-//		requestType string
-//		want        want
-//	}{
-//		{
-//			name:    "simple positive test #1",
-//			request: "/",
-//			body:    "https://ya.ru",
-//			want: want{
-//				statusCode:  http.StatusCreated,
-//				redirectURL: "http://localhost:8080/rfBd67",
-//				contentType: "text/plain; charset=utf-8",
-//			},
-//			requestType: http.MethodPost,
-//		},
-//		{
-//			name:    "simple test #2 with empty URL",
-//			request: "/",
-//			body:    "",
-//			want: want{
-//				statusCode:  http.StatusBadRequest,
-//				redirectURL: "uncorrect URL format\n",
-//				contentType: "text/plain; charset=utf-8",
-//			},
-//			requestType: http.MethodPost,
-//		},
-//		{
-//			name:    "simple test #3 with uncorrect request type",
-//			request: "/",
-//			body:    "https://ya.ru",
-//			want: want{
-//				statusCode:  http.StatusMethodNotAllowed,
-//				redirectURL: "",
-//				contentType: "",
-//			},
-//			requestType: http.MethodDelete,
-//		},
-//		{
-//			name:    "simple test #4 with uncorrect url format",
-//			request: "/",
-//			body:    "/ya.ru",
-//			want: want{
-//				statusCode:  http.StatusBadRequest,
-//				redirectURL: "uncorrect URL format\n",
-//				contentType: "text/plain; charset=utf-8",
-//			},
-//			requestType: http.MethodPost,
-//		},
-//	}
-//
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//
-//			r := NewRouter()
-//			ts := httptest.NewServer(r)
-//			defer ts.Close()
-//
-//			resp, body := testRequest(t, ts, tt.requestType, tt.request, strings.NewReader(tt.body))
-//
-//			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-//			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
-//			assert.Equal(t, tt.want.redirectURL, body)
-//
-//			resp.Body.Close()
-//		})
-//	}
-//}
+func TestSaveURLHandler(t *testing.T) {
 
-//func TestGetURLHandler(t *testing.T) {
-//
-//	type want struct {
-//		statusCode  int
-//		redirectURL string
-//		contentType string
-//		body        string
-//	}
-//
-//	tests := []struct {
-//		name        string
-//		request     string
-//		requestType string
-//		want        want
-//	}{
-//		{
-//			name:    "simple positive test #1",
-//			request: "/test",
-//			want: want{
-//				statusCode:  http.StatusTemporaryRedirect,
-//				redirectURL: "https://yatest.ru",
-//				contentType: "text/plain; charset=utf-8",
-//			},
-//			requestType: http.MethodGet,
-//		},
-//		{
-//			name:    "negative test #2 with wrong method type",
-//			request: "/test",
-//			want: want{
-//				statusCode:  http.StatusMethodNotAllowed,
-//				redirectURL: "",
-//				contentType: "",
-//			},
-//			requestType: http.MethodDelete,
-//		},
-//	}
-//
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//
-//			r := NewRouter()
-//			ts := httptest.NewServer(r)
-//			defer ts.Close()
-//
-//			resp, body := testRequest(t, ts, tt.requestType, tt.request, nil)
-//
-//			fmt.Println(body)
-//
-//			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
-//			assert.Equal(t, tt.want.redirectURL, resp.Header.Get("Location"))
-//
-//			resp.Body.Close()
-//		})
-//	}
-//}
+	type want struct {
+		statusCode  int
+		redirectURL string
+		contentType string
+	}
+
+	tests := []struct {
+		name        string
+		request     string
+		body        string
+		requestType string
+		want        want
+	}{
+		{
+			name:    "simple positive test #1",
+			request: "/",
+			body:    "https://ya.ru",
+			want: want{
+				statusCode:  http.StatusCreated,
+				redirectURL: "http://localhost:8080/ti3SMt",
+				contentType: "text/plain; charset=utf-8",
+			},
+			requestType: http.MethodPost,
+		},
+		{
+			name:    "simple test #2 with empty URL",
+			request: "/",
+			body:    "",
+			want: want{
+				statusCode:  http.StatusBadRequest,
+				redirectURL: "uncorrect URL format\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+			requestType: http.MethodPost,
+		},
+		{
+			name:    "simple test #3 with uncorrect request type",
+			request: "/",
+			body:    "https://ya.ru",
+			want: want{
+				statusCode:  http.StatusMethodNotAllowed,
+				redirectURL: "",
+				contentType: "",
+			},
+			requestType: http.MethodDelete,
+		},
+		{
+			name:    "simple test #4 with uncorrect url format",
+			request: "/",
+			body:    "/ya.ru",
+			want: want{
+				statusCode:  http.StatusBadRequest,
+				redirectURL: "uncorrect URL format\n",
+				contentType: "text/plain; charset=utf-8",
+			},
+			requestType: http.MethodPost,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			r, _ := NewRouter()
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+
+			resp, body := testRequest(t, ts, tt.requestType, tt.request, strings.NewReader(tt.body))
+
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			assert.Equal(t, tt.want.contentType, resp.Header.Get("Content-Type"))
+			assert.Equal(t, tt.want.redirectURL, body)
+
+			resp.Body.Close()
+		})
+	}
+}
+
+func TestGetURLHandler(t *testing.T) {
+
+	type want struct {
+		statusCode  int
+		redirectURL string
+		contentType string
+		body        string
+	}
+
+	tests := []struct {
+		name        string
+		request     string
+		requestType string
+		want        want
+	}{
+		//{
+		//	name:    "simple positive test #1",
+		//	request: "/test",
+		//	want: want{
+		//		statusCode:  http.StatusTemporaryRedirect,
+		//		redirectURL: "https://yatest.ru",
+		//		contentType: "text/plain; charset=utf-8",
+		//	},
+		//	requestType: http.MethodGet,
+		//},
+		{
+			name:    "negative test #2 with wrong method type",
+			request: "/test",
+			want: want{
+				statusCode:  http.StatusMethodNotAllowed,
+				redirectURL: "",
+				contentType: "",
+			},
+			requestType: http.MethodDelete,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			r, _ := NewRouter()
+			ts := httptest.NewServer(r)
+			defer ts.Close()
+
+			resp, body := testRequest(t, ts, tt.requestType, tt.request, nil)
+
+			fmt.Println(body)
+
+			assert.Equal(t, tt.want.statusCode, resp.StatusCode)
+			assert.Equal(t, tt.want.redirectURL, resp.Header.Get("Location"))
+
+			resp.Body.Close()
+		})
+	}
+}
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string) {
 

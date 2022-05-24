@@ -1,8 +1,8 @@
 package repositories
 
 type Repository interface {
-	GetAll() (map[string]string, error)
-	GetByKey(key string) (string, error)
-	Set(key string, value string) error
+	GetAll() map[string]map[string]string
+	GetByOriginalURLForUser(originalURL, userID string) (string, error)
+	Set(originalURL, shortenURL, userID string) error
 	CloseResources() error
 }

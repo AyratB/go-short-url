@@ -22,11 +22,11 @@ func NewReader(fileName string) (*Reader, error) {
 	}, nil
 }
 
-func (r *Reader) ReadAll() (map[string]string, error) {
+func (r *Reader) ReadAll() (map[string]map[string]string, error) {
 
 	defer r.file.Close()
 
-	shortURLs := make(map[string]string)
+	shortURLs := make(map[string]map[string]string)
 	var err error
 
 	for r.decoder.More() {
@@ -34,7 +34,13 @@ func (r *Reader) ReadAll() (map[string]string, error) {
 		if err = r.decoder.Decode(&record); err != nil {
 			return nil, err
 		}
-		shortURLs[record.Key] = record.Value
+
+		if userData, ok := shortURLs[record.UserID]; ok {
+			userData[record.OriginalURL] = record.ShortenURL
+		} else {
+			shortURLs[record.UserID] = make(map[string]string)
+			shortURLs[record.UserID][record.OriginalURL] = record.ShortenURL
+		}
 	}
 
 	return shortURLs, err

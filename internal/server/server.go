@@ -13,23 +13,28 @@ func Run(configs *utils.Config) (func() error, error) {
 
 	r := chi.NewRouter()
 
+	decoder := utils.NewDecoder()
+	cookieHandler := middlewares.NewCookieHandler(decoder)
+
 	r.Use(middleware.RequestID)
 	r.Use(middlewares.GzipHandle)
+	r.Use(cookieHandler.CookieHandler)
 	r.Use(middleware.StripSlashes)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	handler, closer, err := handlers.NewHandler(configs)
+	handler, resourcesCloser, err := handlers.NewHandler(configs)
 	if err != nil {
-		return closer, err
+		return resourcesCloser, err
 	}
 
 	r.Route("/", func(r chi.Router) {
-		r.Post("/api/shorten", handler.PostShortenURLHandler)
+		r.Post("/api/shorten", handler.SaveJSONURLHandler)
+		r.Get("/api/user/urls", handler.GetAllSavedUserURLs)
 		r.Get("/{id}", handler.GetURLHandler)
-		r.Post("/", handler.SaveURLHandler)
+		r.Post("/", handler.SaveBodyURLHandler)
 	})
 
-	return closer, http.ListenAndServe(configs.ServerAddress, r)
+	return resourcesCloser, http.ListenAndServe(configs.ServerAddress, r)
 }

@@ -11,7 +11,7 @@ type Config struct {
 	FileStoragePath string
 }
 
-func GetConfigs() (*Config, error) {
+func GetConfigs() *Config {
 	config := &Config{}
 
 	config.ServerAddress = os.Getenv("SERVER_ADDRESS")
@@ -28,5 +28,5 @@ func GetConfigs() (*Config, error) {
 	}
 
 	flag.Parse()
-	return config, nil
+	return config
 }
