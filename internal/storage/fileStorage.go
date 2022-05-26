@@ -39,6 +39,10 @@ func (f *FileStorage) CloseResources() error {
 	return f.writer.Close()
 }
 
+func (f *FileStorage) PingStorage() error {
+	return nil
+}
+
 func (f *FileStorage) GetAll() map[string]map[string]string {
 	return f.shortUserURLs
 }

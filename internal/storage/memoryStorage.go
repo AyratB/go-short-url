@@ -38,3 +38,7 @@ func (ms *MemoryStorage) Set(originalURL, shortenURL, userID string) error {
 func (ms *MemoryStorage) CloseResources() error {
 	return nil
 }
+
+func (ms *MemoryStorage) PingStorage() error {
+	return nil
+}

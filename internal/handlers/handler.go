@@ -30,13 +30,20 @@ func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	var repo repositories.Repository
 	var err error
 
-	if len(configs.FileStoragePath) == 0 {
-		repo = storage.NewMemoryStorage()
-	} else {
+	//configs.DatabaseDSN = "postgres://test:test@localhost:5432/ypdb?sslmode=disable"
+
+	if len(configs.DatabaseDSN) != 0 {
+		repo, err = storage.NewDBStorage(configs.DatabaseDSN)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else if len(configs.FileStoragePath) != 0 {
 		repo, err = storage.NewFileStorage(configs.FileStoragePath)
 		if err != nil {
 			return nil, nil, err
 		}
+	} else {
+		repo = storage.NewMemoryStorage()
 	}
 
 	return &Handler{
@@ -89,6 +96,20 @@ func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(resp)
+}
+
+func (h *Handler) PingDBHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Only GET requests are allowed by this route!", http.StatusMethodNotAllowed)
+		return
+	}
+
+	err := h.sh.PingStorage()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {

@@ -9,6 +9,7 @@ type Config struct {
 	ServerAddress   string
 	BaseURL         string
 	FileStoragePath string
+	DatabaseDSN     string
 }
 
 func GetConfigs() *Config {
@@ -25,6 +26,10 @@ func GetConfigs() *Config {
 	config.FileStoragePath = os.Getenv("FILE_STORAGE_PATH")
 	if len(config.FileStoragePath) == 0 {
 		flag.StringVar(&config.FileStoragePath, "f", "", "file storage path")
+	}
+	config.DatabaseDSN = os.Getenv("DATABASE_DSN")
+	if len(config.DatabaseDSN) == 0 {
+		flag.StringVar(&config.DatabaseDSN, "d", "", "db storage path")
 	}
 
 	flag.Parse()

@@ -94,3 +94,7 @@ func (s *Shortener) GetAllSavedUserURLs(baseURL, userID string) ([]*URL, error) 
 
 	return urls, nil
 }
+
+func (s *Shortener) PingStorage() error {
+	return s.repo.PingStorage()
+}
