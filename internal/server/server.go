@@ -33,6 +33,7 @@ func Run(configs *utils.Config) (func() error, error) {
 		r.Post("/api/shorten", handler.SaveJSONURLHandler)
 		r.Get("/api/user/urls", handler.GetAllSavedUserURLs)
 		r.Get("/{id}", handler.GetURLHandler)
+		r.Get("/ping", handler.PingDBHandler)
 		r.Post("/", handler.SaveBodyURLHandler)
 	})
 

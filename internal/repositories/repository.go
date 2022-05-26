@@ -5,4 +5,5 @@ type Repository interface {
 	GetByOriginalURLForUser(originalURL, userID string) (string, error)
 	Set(originalURL, shortenURL, userID string) error
 	CloseResources() error
+	PingStorage() error
 }
