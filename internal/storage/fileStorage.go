@@ -43,33 +43,33 @@ func (f *FileStorage) PingStorage() error {
 	return nil
 }
 
-func (f *FileStorage) GetAll() map[string]map[string]string {
-	return f.shortUserURLs
+func (f *FileStorage) GetAll() (map[string]map[string]string, error) {
+	return f.shortUserURLs, nil
 }
 
-func (f *FileStorage) GetByOriginalURLForUser(originalURL, userID string) (string, error) {
-	urls := f.GetAll()
+func (f *FileStorage) GetByOriginalURLForUser(originalURL, userGUID string) (string, error) {
+	urls, _ := f.GetAll()
 
-	if usersURLs, ok := urls[userID]; ok {
+	if usersURLs, ok := urls[userGUID]; ok {
 		return usersURLs[originalURL], nil
 	}
 
 	return "", nil
 }
 
-func (f *FileStorage) Set(originalURL, shortenURL, userID string) error {
+func (f *FileStorage) Set(originalURL, shortenURL, userGUID string) error {
 
-	if userURLs, ok := f.shortUserURLs[userID]; ok {
+	if userURLs, ok := f.shortUserURLs[userGUID]; ok {
 		userURLs[originalURL] = shortenURL
 	} else {
-		f.shortUserURLs[userID] = make(map[string]string)
-		f.shortUserURLs[userID][originalURL] = shortenURL
+		f.shortUserURLs[userGUID] = make(map[string]string)
+		f.shortUserURLs[userGUID][originalURL] = shortenURL
 	}
 
 	r := &service.Record{
 		OriginalURL: originalURL,
 		ShortenURL:  shortenURL,
-		UserID:      userID,
+		UserID:      userGUID,
 	}
 	if err := f.writer.Write(r); err != nil {
 		return err
