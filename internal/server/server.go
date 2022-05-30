@@ -34,6 +34,7 @@ func Run(configs *utils.Config) (func() error, error) {
 		r.Get("/api/user/urls", handler.GetAllSavedUserURLs)
 		r.Get("/{id}", handler.GetURLHandler)
 		r.Get("/ping", handler.PingDBHandler)
+		r.Post("/api/shorten/batch", handler.BatchHandler)
 		r.Post("/", handler.SaveBodyURLHandler)
 	})
 

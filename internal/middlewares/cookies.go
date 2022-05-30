@@ -17,14 +17,14 @@ func NewCookieHandler(decoder *utils.Decoder) *CookieHandler {
 	return &CookieHandler{decoder: decoder}
 }
 
-const (
-	cookieUserName = "UserID"
-)
+type CookieUserName string
+
+const cookieUserName = CookieUserName("UserID")
 
 func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		cookie, err := r.Cookie(cookieUserName)
+		cookie, err := r.Cookie(string(cookieUserName))
 		var currentUser = ""
 
 		if errors.Is(err, http.ErrNoCookie) {
@@ -34,7 +34,7 @@ func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 			token := c.decoder.EnCode(userID)
 
 			newCookie := &http.Cookie{
-				Name:  cookieUserName,
+				Name:  string(cookieUserName),
 				Value: token,
 				Path:  "/",
 			}

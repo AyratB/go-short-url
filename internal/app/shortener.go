@@ -10,7 +10,7 @@ import (
 
 const (
 	letterBytes = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	letterCount = 6
+	letterCount = 8
 )
 
 func GetNewShortener(repo repositories.Repository) *Shortener {
@@ -22,6 +22,8 @@ type Shortener struct {
 }
 
 func (s *Shortener) getShortenURL(longURL, userID string) (string, error) {
+
+	//rand.Seed(time.Now().UnixNano())
 
 	b := make([]byte, letterCount)
 	for i := range b {
