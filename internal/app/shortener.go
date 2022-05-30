@@ -6,12 +6,11 @@ import (
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/utils"
 	"math/rand"
-	"time"
 )
 
 const (
 	letterBytes = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	letterCount = 6
+	letterCount = 8
 )
 
 func GetNewShortener(repo repositories.Repository) *Shortener {
@@ -24,7 +23,7 @@ type Shortener struct {
 
 func (s *Shortener) getShortenURL(longURL, userID string) (string, error) {
 
-	rand.Seed(time.Now().UnixNano())
+	//rand.Seed(time.Now().UnixNano())
 
 	b := make([]byte, letterCount)
 	for i := range b {

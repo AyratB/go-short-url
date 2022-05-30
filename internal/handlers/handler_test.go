@@ -57,7 +57,7 @@ func TestPostShortenURLHandlerHandler(t *testing.T) {
 			body:    PostURLRequest{URL: "https://ya.ru"},
 			want: want{
 				statusCode:  http.StatusCreated,
-				response:    PostURLResponse{Result: "http://localhost:8080/rfBd67"},
+				response:    PostURLResponse{Result: "http://localhost:8080/rfBd67ti"},
 				contentType: "application/json",
 			},
 			requestType: http.MethodPost,
@@ -149,7 +149,7 @@ func TestSaveURLHandler(t *testing.T) {
 			body:    "https://ya.ru",
 			want: want{
 				statusCode:  http.StatusCreated,
-				redirectURL: "http://localhost:8080/ti3SMt",
+				redirectURL: "http://localhost:8080/3SMtYvSg",
 				contentType: "text/plain; charset=utf-8",
 			},
 			requestType: http.MethodPost,
