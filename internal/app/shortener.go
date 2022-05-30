@@ -6,6 +6,7 @@ import (
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/utils"
 	"math/rand"
+	"time"
 )
 
 const (
@@ -22,6 +23,8 @@ type Shortener struct {
 }
 
 func (s *Shortener) getShortenURL(longURL, userID string) (string, error) {
+
+	rand.Seed(time.Now().UnixNano())
 
 	b := make([]byte, letterCount)
 	for i := range b {
