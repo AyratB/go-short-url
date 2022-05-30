@@ -62,7 +62,10 @@ func (s *Shortener) MakeShortURL(longURL, baseURL, userID string) (string, error
 
 func (s *Shortener) GetOriginalURL(shortenURL string) (string, error) {
 
-	urlsMap := s.repo.GetAll()
+	urlsMap, err := s.repo.GetAll()
+	if err != nil {
+		return "", err
+	}
 
 	for _, shortenURLs := range urlsMap {
 		for originalURL, shortValue := range shortenURLs {
@@ -81,7 +84,10 @@ type URL struct {
 }
 
 func (s *Shortener) GetAllSavedUserURLs(baseURL, userID string) ([]*URL, error) {
-	urlsMap := s.repo.GetAll()
+	urlsMap, err := s.repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
 
 	urls := make([]*URL, 0)
 
