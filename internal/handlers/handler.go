@@ -30,7 +30,7 @@ func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	var repo repositories.Repository
 	var err error
 
-	//configs.DatabaseDSN = "postgres://test:test@localhost:5432/ypdb?sslmode=disable"
+	//configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
 
 	if len(configs.DatabaseDSN) != 0 {
 		repo, err = storage.NewDBStorage(configs.DatabaseDSN)
@@ -112,6 +112,63 @@ func (h *Handler) PingDBHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+type BatchRequest struct {
+	CorrelationId string `json:"correlation_id"`
+	OriginalUrl   string `json:"original_url"`
+}
+
+type BatchResponse struct {
+	CorrelationId string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}
+
+func (h *Handler) BatchHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST requests are allowed by this route!", http.StatusMethodNotAllowed)
+		return
+	}
+
+	b, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	originalBatches := make([]BatchRequest, 0)
+	shortenBatches := make([]BatchResponse, 0)
+
+	if err := json.Unmarshal(b, &originalBatches); err != nil {
+		http.Error(w, "Incorrect body JSON format", http.StatusBadRequest)
+		return
+	}
+
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+
+	for _, originalButch := range originalBatches {
+
+		shortenButch := BatchResponse{CorrelationId: originalButch.CorrelationId}
+
+		if shortenButch.ShortURL, err = h.sh.MakeShortURL(originalButch.OriginalUrl, h.configs.BaseURL, userID); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		shortenBatches = append(shortenBatches, shortenButch)
+	}
+
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	resp, err := json.Marshal(shortenBatches)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(resp)
+}
+
 func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Only GET requests are allowed by this route!", http.StatusMethodNotAllowed)
@@ -163,7 +220,6 @@ func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(shortURL))
 }
 
-// здесь нужен USERID
 func (h *Handler) GetAllSavedUserURLs(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
