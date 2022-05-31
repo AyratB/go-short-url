@@ -149,22 +149,14 @@ func (d *DBStorage) Set(originalURL, shortenURL, userGUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	urls, err := d.GetAll()
+	userID, err := d.getUserByGUID(userGUID)
 	if err != nil {
 		return err
 	}
-	var userID int
 
-	if userData, ok := urls[userGUID]; ok {
-		if _, ok := userData[originalURL]; ok {
-			return nil
-		}
-
-		if userID, err = d.getUserByGUID(userGUID); err != nil {
-			return err
-		}
-	} else {
-		if userID, err = d.saveUser(userGUID); err != nil {
+	if userID == 0 { // not such user
+		userID, err = d.saveUser(userGUID)
+		if err != nil {
 			return err
 		}
 	}
@@ -173,6 +165,12 @@ func (d *DBStorage) Set(originalURL, shortenURL, userGUID string) error {
 	if err != nil {
 		return err
 	}
+
+	//if err != nil {
+	//	if err, ok := err.(*pq.Error); ok && err.Code == pgerrcode.UniqueViolation {
+	//		return customerrors.ErrDuplicateEntity
+	//	}
+	//}
 
 	rows, err := result.RowsAffected()
 	if err != nil {
