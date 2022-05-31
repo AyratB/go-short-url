@@ -1,3 +1,3 @@
 package utils
 
-const CurrentUser = "CurrentUser"
+const CurrentUser = 345
