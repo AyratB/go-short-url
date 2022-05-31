@@ -79,7 +79,7 @@ func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+	userGUID := getUserGUID(r)
 
 	shortURL, err := h.sh.MakeShortURL(p.URL, userGUID)
 
@@ -156,13 +156,11 @@ func (h *Handler) SaveBatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
-
 	for _, originalButch := range originalBatches {
 
 		shortenButch := BatchResponse{CorrelationID: originalButch.CorrelationID}
 
-		shortenURL, err := h.sh.MakeShortURL(originalButch.OriginalURL, userID)
+		shortenURL, err := h.sh.MakeShortURL(originalButch.OriginalURL, getUserGUID(r))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -208,6 +206,10 @@ func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
+func getUserGUID(r *http.Request) string {
+	return fmt.Sprint(r.Context().Value("1"))
+}
+
 func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -221,7 +223,7 @@ func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser).(string))
+	userGUID := getUserGUID(r)
 
 	var shortURL string
 
@@ -256,10 +258,8 @@ func (h *Handler) GetAllSavedUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser).(string))
-
 	// получаем все урлы
-	urls, err := h.sh.GetAllSavedUserURLs(h.configs.BaseURL, userGUID)
+	urls, err := h.sh.GetAllSavedUserURLs(h.configs.BaseURL, getUserGUID(r))
 
 	if err != nil {
 		http.Error(w, "Errors happens when get all saved URLS!", http.StatusInternalServerError)

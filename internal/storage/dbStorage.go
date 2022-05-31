@@ -76,7 +76,7 @@ func (d *DBStorage) CloseResources() error {
 func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-
+	defer cancel()
 	urls := make([]DBEntity, 0)
 
 	query := `
@@ -89,11 +89,7 @@ func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	defer func() {
-		cancel()
-		rows.Close()
-	}()
+	defer rows.Close()
 
 	for rows.Next() {
 		var e DBEntity
