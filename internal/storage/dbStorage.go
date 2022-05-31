@@ -58,6 +58,8 @@ func (d *DBStorage) initTables() error {
 			user_id			INTEGER NOT NULL,
 			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 		);
+
+		CREATE UNIQUE INDEX IF NOT EXISTS original_url_idx ON user_urls (original_url);
 	`
 	if _, err := d.DB.ExecContext(ctx, initQuery); err != nil {
 		return err
