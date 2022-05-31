@@ -32,7 +32,7 @@ func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	var repo repositories.Repository
 	var err error
 
-	configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
+	//configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
 
 	if len(configs.DatabaseDSN) != 0 {
 		repo, err = storage.NewDBStorage(configs.DatabaseDSN)
