@@ -152,16 +152,20 @@ func (d *DBStorage) Set(originalURL, shortenURL, userGUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	var userID int
-
-	userID, err := d.getUserByGUID(userGUID)
+	urls, err := d.GetAll()
 	if err != nil {
 		return err
 	}
+	var userID int
 
-	if userID == 0 { // not such user
-		userID, err = d.saveUser(userGUID)
-		if err != nil {
+	if userData, ok := urls[userGUID]; ok {
+		if _, ok := userData[originalURL]; !ok {
+			if userID, err = d.getUserByGUID(userGUID); err != nil {
+				return err
+			}
+		}
+	} else {
+		if userID, err = d.saveUser(userGUID); err != nil {
 			return err
 		}
 	}
