@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/AyratB/go-short-url/internal/app"
+	custom_errors "github.com/AyratB/go-short-url/internal/errors"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
@@ -30,7 +32,7 @@ func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	var repo repositories.Repository
 	var err error
 
-	//configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
+	configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
 
 	if len(configs.DatabaseDSN) != 0 {
 		repo, err = storage.NewDBStorage(configs.DatabaseDSN)
@@ -77,24 +79,34 @@ func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
-	shortURL, err := h.sh.MakeShortURL(p.URL, h.configs.BaseURL, userID)
+	shortURL, err := h.sh.MakeShortURL(p.URL, userGUID)
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	if errors.Is(err, custom_errors.ErrDuplicateEntity) {
+		shortURL, err = h.sh.GetExistingURLS(p.URL, userGUID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusConflict)
+
+	} else {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	resp, err := json.Marshal(PostURLResponse{Result: shortURL})
+	resp, err := json.Marshal(PostURLResponse{Result: fmt.Sprintf("%s/%s", h.configs.BaseURL, shortURL)})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	w.Write(resp)
 }
 
@@ -122,7 +134,7 @@ type BatchResponse struct {
 	ShortURL      string `json:"short_url"`
 }
 
-func (h *Handler) BatchHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveBatchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST requests are allowed by this route!", http.StatusMethodNotAllowed)
 		return
@@ -149,11 +161,13 @@ func (h *Handler) BatchHandler(w http.ResponseWriter, r *http.Request) {
 
 		shortenButch := BatchResponse{CorrelationId: originalButch.CorrelationId}
 
-		if shortenButch.ShortURL, err = h.sh.MakeShortURL(originalButch.OriginalUrl, h.configs.BaseURL, userID); err != nil {
+		shortenURL, err := h.sh.MakeShortURL(originalButch.OriginalUrl, userID)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
+		shortenButch.ShortURL = fmt.Sprintf("%s/%s", h.configs.BaseURL, shortenURL)
 		shortenBatches = append(shortenBatches, shortenButch)
 	}
 
@@ -206,18 +220,31 @@ func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
-	shortURL, err := h.sh.MakeShortURL(string(rawURL), h.configs.BaseURL, userID)
+	var shortURL string
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	shortURL, err = h.sh.MakeShortURL(string(rawURL), userGUID)
+
+	if errors.Is(err, custom_errors.ErrDuplicateEntity) {
+		shortURL, err = h.sh.GetExistingURLS(string(rawURL), userGUID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusConflict)
+	} else {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
 	}
 
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(shortURL))
+	w.Write([]byte(fmt.Sprintf("%s/%s", h.configs.BaseURL, shortURL)))
 }
 
 func (h *Handler) GetAllSavedUserURLs(w http.ResponseWriter, r *http.Request) {
