@@ -149,17 +149,36 @@ func (d *DBStorage) Set(originalURL, shortenURL, userGUID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	userID, err := d.getUserByGUID(userGUID)
+	urls, err := d.GetAll()
 	if err != nil {
 		return err
 	}
+	var userID int
 
-	if userID == 0 { // not such user
-		userID, err = d.saveUser(userGUID)
-		if err != nil {
+	if userData, ok := urls[userGUID]; ok {
+		if _, ok := userData[originalURL]; !ok {
+			if userID, err = d.getUserByGUID(userGUID); err != nil {
+				return err
+			}
+		}
+
+	} else {
+		if userID, err = d.saveUser(userGUID); err != nil {
 			return err
 		}
 	}
+
+	//userID, err := d.getUserByGUID(userGUID)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if userID == 0 { // not such user
+	//	userID, err = d.saveUser(userGUID)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 
 	result, err := d.DB.ExecContext(ctx, "INSERT INTO user_urls (original_url, shorten_url, user_id) VALUES ($1, $2, $3)", originalURL, shortenURL, userID)
 	if err != nil {
