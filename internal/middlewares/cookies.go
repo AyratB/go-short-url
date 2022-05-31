@@ -21,6 +21,8 @@ type CookieUserName string
 
 const cookieUserName = CookieUserName("UserID")
 
+type CtxKey struct{}
+
 func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -55,7 +57,7 @@ func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 				currentUser = decoded
 			}
 		}
-		ctx := context.WithValue(r.Context(), utils.CurrentUser, currentUser)
+		ctx := context.WithValue(r.Context(), CtxKey{}, currentUser)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

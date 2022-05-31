@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/AyratB/go-short-url/internal/app"
 	custom_errors "github.com/AyratB/go-short-url/internal/errors"
+	"github.com/AyratB/go-short-url/internal/middlewares"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
@@ -79,7 +80,7 @@ func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+	userGUID := fmt.Sprint(r.Context().Value(middlewares.CtxKey{}))
 
 	shortURL, err := h.sh.MakeShortURL(p.URL, userGUID)
 
@@ -156,7 +157,7 @@ func (h *Handler) SaveBatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+	userID := fmt.Sprint(r.Context().Value(middlewares.CtxKey{}))
 
 	for _, originalButch := range originalBatches {
 
@@ -221,7 +222,7 @@ func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+	userGUID := fmt.Sprint(r.Context().Value(middlewares.CtxKey{}).(string))
 
 	var shortURL string
 
@@ -256,10 +257,10 @@ func (h *Handler) GetAllSavedUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
+	userGUID := fmt.Sprint(r.Context().Value(middlewares.CtxKey{}).(string))
 
 	// получаем все урлы
-	urls, err := h.sh.GetAllSavedUserURLs(h.configs.BaseURL, userID)
+	urls, err := h.sh.GetAllSavedUserURLs(h.configs.BaseURL, userGUID)
 
 	if err != nil {
 		http.Error(w, "Errors happens when get all saved URLS!", http.StatusInternalServerError)
