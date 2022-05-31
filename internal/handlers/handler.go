@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AyratB/go-short-url/internal/app"
-	custom_errors "github.com/AyratB/go-short-url/internal/errors"
-	"github.com/AyratB/go-short-url/internal/middlewares"
+	customerrors "github.com/AyratB/go-short-url/internal/errors"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
@@ -80,11 +79,11 @@ func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userGUID := fmt.Sprint(r.Context().Value(middlewares.CtxKey{}))
+	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
 	shortURL, err := h.sh.MakeShortURL(p.URL, userGUID)
 
-	if errors.Is(err, custom_errors.ErrDuplicateEntity) {
+	if errors.Is(err, customerrors.ErrDuplicateEntity) {
 		shortURL, err = h.sh.GetExistingURLS(p.URL, userGUID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -127,12 +126,12 @@ func (h *Handler) PingDBHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type BatchRequest struct {
-	CorrelationId string `json:"correlation_id"`
-	OriginalUrl   string `json:"original_url"`
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
 }
 
 type BatchResponse struct {
-	CorrelationId string `json:"correlation_id"`
+	CorrelationID string `json:"correlation_id"`
 	ShortURL      string `json:"short_url"`
 }
 
@@ -157,13 +156,13 @@ func (h *Handler) SaveBatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := fmt.Sprint(r.Context().Value(middlewares.CtxKey{}))
+	userID := fmt.Sprint(r.Context().Value(utils.CurrentUser))
 
 	for _, originalButch := range originalBatches {
 
-		shortenButch := BatchResponse{CorrelationId: originalButch.CorrelationId}
+		shortenButch := BatchResponse{CorrelationID: originalButch.CorrelationID}
 
-		shortenURL, err := h.sh.MakeShortURL(originalButch.OriginalUrl, userID)
+		shortenURL, err := h.sh.MakeShortURL(originalButch.OriginalURL, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -222,13 +221,13 @@ func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userGUID := fmt.Sprint(r.Context().Value(middlewares.CtxKey{}).(string))
+	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser).(string))
 
 	var shortURL string
 
 	shortURL, err = h.sh.MakeShortURL(string(rawURL), userGUID)
 
-	if errors.Is(err, custom_errors.ErrDuplicateEntity) {
+	if errors.Is(err, customerrors.ErrDuplicateEntity) {
 		shortURL, err = h.sh.GetExistingURLS(string(rawURL), userGUID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -257,7 +256,7 @@ func (h *Handler) GetAllSavedUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userGUID := fmt.Sprint(r.Context().Value(middlewares.CtxKey{}).(string))
+	userGUID := fmt.Sprint(r.Context().Value(utils.CurrentUser).(string))
 
 	// получаем все урлы
 	urls, err := h.sh.GetAllSavedUserURLs(h.configs.BaseURL, userGUID)

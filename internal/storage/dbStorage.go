@@ -7,7 +7,6 @@ import (
 	customerrors "github.com/AyratB/go-short-url/internal/errors"
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 	"time"
 )
 
@@ -87,15 +86,14 @@ func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 	`
 
 	rows, err := d.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
 
 	defer func() {
 		cancel()
 		rows.Close()
 	}()
-
-	if err != nil {
-		return nil, err
-	}
 
 	for rows.Next() {
 		var e DBEntity
@@ -111,7 +109,7 @@ func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 		if userData, ok := result[urlInfo.userGUID]; ok {
 			userData[urlInfo.originalURL] = urlInfo.shortenURL
 		} else {
-			result[urlInfo.userGUID] = make(map[string]string, 0)
+			result[urlInfo.userGUID] = make(map[string]string)
 			result[urlInfo.userGUID][urlInfo.originalURL] = urlInfo.shortenURL
 		}
 	}
