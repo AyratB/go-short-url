@@ -6,6 +6,7 @@ import (
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/utils"
 	"math/rand"
+	"time"
 )
 
 const (
@@ -26,6 +27,8 @@ func (s *Shortener) MakeShortURL(longURL, userID string) (string, error) {
 	if !utils.IsValidURL(longURL) {
 		return "", errors.New("uncorrect URL format")
 	}
+
+	rand.Seed(time.Now().UnixNano())
 
 	b := make([]byte, letterCount)
 	for i := range b {
