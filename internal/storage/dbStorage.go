@@ -89,6 +89,10 @@ func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	if rows.Err() != nil {
+		return nil, err
+	}
+
 	defer rows.Close()
 
 	for rows.Next() {

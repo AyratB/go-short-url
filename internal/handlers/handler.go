@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/AyratB/go-short-url/internal/app"
 	customerrors "github.com/AyratB/go-short-url/internal/errors"
+	"github.com/AyratB/go-short-url/internal/middlewares"
 	"github.com/AyratB/go-short-url/internal/repositories"
 	"github.com/AyratB/go-short-url/internal/storage"
 	"github.com/AyratB/go-short-url/internal/utils"
@@ -207,7 +208,7 @@ func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserGUID(r *http.Request) string {
-	return fmt.Sprint(r.Context().Value("1"))
+	return fmt.Sprint(r.Context().Value(middlewares.KeyPrincipalID))
 }
 
 func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {

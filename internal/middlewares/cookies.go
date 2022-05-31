@@ -21,6 +21,13 @@ type CookieUserName string
 
 const cookieUserName = CookieUserName("UserID")
 
+type key int
+
+const (
+	KeyPrincipalID key = iota
+	// ...
+)
+
 func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -55,7 +62,7 @@ func (c *CookieHandler) CookieHandler(next http.Handler) http.Handler {
 				currentUser = decoded
 			}
 		}
-		ctx := context.WithValue(r.Context(), "1", currentUser)
+		ctx := context.WithValue(r.Context(), KeyPrincipalID, currentUser)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
