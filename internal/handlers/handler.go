@@ -90,6 +90,7 @@ func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		w.Header().Set("content-type", "application/json")
 		w.WriteHeader(http.StatusConflict)
 
 	} else {
@@ -97,10 +98,10 @@ func (h *Handler) SaveJSONURLHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-	}
 
-	w.Header().Set("content-type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+		w.Header().Set("content-type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+	}
 
 	resp, err := json.Marshal(PostURLResponse{Result: fmt.Sprintf("%s/%s", h.configs.BaseURL, shortURL)})
 	if err != nil {
@@ -233,6 +234,7 @@ func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		w.Header().Set("content-type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusConflict)
 	} else {
 		if err != nil {
@@ -240,10 +242,10 @@ func (h *Handler) SaveBodyURLHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		w.Header().Set("content-type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusCreated)
 	}
 
-	w.Header().Set("content-type", "text/plain; charset=utf-8")
 	w.Write([]byte(fmt.Sprintf("%s/%s", h.configs.BaseURL, shortURL)))
 }
 
