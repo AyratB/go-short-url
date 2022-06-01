@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
+	customerrors "github.com/AyratB/go-short-url/internal/errors"
+	"github.com/jackc/pgerrcode"
+	"github.com/lib/pq"
 	"time"
 )
 
@@ -58,6 +60,8 @@ func (d *DBStorage) initTables() error {
 			user_id			INTEGER NOT NULL,
 			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 		);
+
+		CREATE UNIQUE INDEX IF NOT EXISTS original_url_idx ON user_urls (original_url);
 	`
 	if _, err := d.DB.ExecContext(ctx, initQuery); err != nil {
 		return err
@@ -72,7 +76,7 @@ func (d *DBStorage) CloseResources() error {
 func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-
+	defer cancel()
 	urls := make([]DBEntity, 0)
 
 	query := `
@@ -82,15 +86,14 @@ func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 	`
 
 	rows, err := d.DB.QueryContext(ctx, query)
-
-	defer func() {
-		cancel()
-		rows.Close()
-	}()
-
 	if err != nil {
 		return nil, err
 	}
+	if rows.Err() != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var e DBEntity
@@ -106,7 +109,7 @@ func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 		if userData, ok := result[urlInfo.userGUID]; ok {
 			userData[urlInfo.originalURL] = urlInfo.shortenURL
 		} else {
-			result[urlInfo.userGUID] = make(map[string]string, 0)
+			result[urlInfo.userGUID] = make(map[string]string)
 			result[urlInfo.userGUID][urlInfo.originalURL] = urlInfo.shortenURL
 		}
 	}
@@ -154,12 +157,10 @@ func (d *DBStorage) Set(originalURL, shortenURL, userGUID string) error {
 	var userID int
 
 	if userData, ok := urls[userGUID]; ok {
-		if _, ok := userData[originalURL]; ok {
-			return nil
-		}
-
-		if userID, err = d.getUserByGUID(userGUID); err != nil {
-			return err
+		if _, ok := userData[originalURL]; !ok {
+			if userID, err = d.getUserByGUID(userGUID); err != nil {
+				return err
+			}
 		}
 	} else {
 		if userID, err = d.saveUser(userGUID); err != nil {
@@ -169,7 +170,9 @@ func (d *DBStorage) Set(originalURL, shortenURL, userGUID string) error {
 
 	result, err := d.DB.ExecContext(ctx, "INSERT INTO user_urls (original_url, shorten_url, user_id) VALUES ($1, $2, $3)", originalURL, shortenURL, userID)
 	if err != nil {
-		return err
+		if err, ok := err.(*pq.Error); ok && err.Code == pgerrcode.UniqueViolation {
+			return customerrors.ErrDuplicateEntity
+		}
 	}
 
 	rows, err := result.RowsAffected()
