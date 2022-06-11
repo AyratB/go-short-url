@@ -58,6 +58,7 @@ func (d *DBStorage) initTables() error {
     		original_url 	TEXT NOT NULL,
 			shorten_url		TEXT NOT NULL,
 			user_id			INTEGER NOT NULL,
+			is_deleted		BOOLEAN DEFAULT false,
 			FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 		);
 
