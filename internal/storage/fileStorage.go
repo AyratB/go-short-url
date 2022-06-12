@@ -1,13 +1,14 @@
 package storage
 
 import (
+	"github.com/AyratB/go-short-url/internal/entities"
 	"github.com/AyratB/go-short-url/internal/service"
 )
 
 type FileStorage struct {
 	writer        *service.Writer
 	reader        *service.Reader
-	shortUserURLs map[string]map[string]string
+	shortUserURLs map[string]map[string]*entities.URLInfo
 }
 
 func NewFileStorage(filePath string) (*FileStorage, error) {
@@ -43,7 +44,7 @@ func (f *FileStorage) PingStorage() error {
 	return nil
 }
 
-func (f *FileStorage) GetAll() (map[string]map[string]string, error) {
+func (f *FileStorage) GetAll() (map[string]map[string]*entities.URLInfo, error) {
 	return f.shortUserURLs, nil
 }
 
@@ -51,7 +52,7 @@ func (f *FileStorage) GetByOriginalURLForUser(originalURL, userGUID string) (str
 	urls, _ := f.GetAll()
 
 	if usersURLs, ok := urls[userGUID]; ok {
-		return usersURLs[originalURL], nil
+		return usersURLs[originalURL].ShortenURL, nil
 	}
 
 	return "", nil
@@ -59,11 +60,12 @@ func (f *FileStorage) GetByOriginalURLForUser(originalURL, userGUID string) (str
 
 func (f *FileStorage) Set(originalURL, shortenURL, userGUID string) error {
 
-	if userURLs, ok := f.shortUserURLs[userGUID]; ok {
-		userURLs[originalURL] = shortenURL
-	} else {
-		f.shortUserURLs[userGUID] = make(map[string]string)
-		f.shortUserURLs[userGUID][originalURL] = shortenURL
+	if _, ok := f.shortUserURLs[userGUID]; !ok {
+		f.shortUserURLs[userGUID] = make(map[string]*entities.URLInfo)
+	}
+	f.shortUserURLs[userGUID][originalURL] = &entities.URLInfo{
+		ShortenURL: shortenURL,
+		IsDeleted:  false,
 	}
 
 	r := &service.Record{

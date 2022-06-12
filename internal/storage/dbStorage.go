@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/AyratB/go-short-url/internal/entities"
 	customerrors "github.com/AyratB/go-short-url/internal/errors"
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
@@ -12,12 +13,13 @@ import (
 
 type DBStorage struct {
 	DB            *sql.DB
-	shortUserURLs map[string]map[string]string
+	shortUserURLs map[string]map[string]*entities.URLInfo // key - origin, Value - URLInfo
 }
 
 type DBEntity struct {
 	originalURL string
 	shortenURL  string
+	isDeleted   bool
 	UserData
 }
 
@@ -43,6 +45,8 @@ func NewDBStorage(dsn string) (*DBStorage, error) {
 }
 
 func (d *DBStorage) initTables() error {
+
+	// TODO add once init
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -74,14 +78,14 @@ func (d *DBStorage) CloseResources() error {
 	return d.DB.Close()
 }
 
-func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
+func (d *DBStorage) GetAll() (map[string]map[string]*entities.URLInfo, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	urls := make([]DBEntity, 0)
 
 	query := `
-		SELECT uu.original_url, uu.shorten_url, u.id, u.guid 
+		SELECT uu.original_url, uu.shorten_url, uu.is_deleted, u.id, u.guid 
 			FROM user_urls as uu
 		JOIN users as u ON uu.user_id = u.id
 	`
@@ -98,20 +102,21 @@ func (d *DBStorage) GetAll() (map[string]map[string]string, error) {
 
 	for rows.Next() {
 		var e DBEntity
-		if err = rows.Scan(&e.originalURL, &e.shortenURL, &e.userID, &e.userGUID); err != nil {
+		if err = rows.Scan(&e.originalURL, &e.shortenURL, &e.isDeleted, &e.userID, &e.userGUID); err != nil {
 			return nil, err
 		}
 		urls = append(urls, e)
 	}
 
-	result := make(map[string]map[string]string)
+	result := make(map[string]map[string]*entities.URLInfo)
 
 	for _, urlInfo := range urls {
-		if userData, ok := result[urlInfo.userGUID]; ok {
-			userData[urlInfo.originalURL] = urlInfo.shortenURL
-		} else {
-			result[urlInfo.userGUID] = make(map[string]string)
-			result[urlInfo.userGUID][urlInfo.originalURL] = urlInfo.shortenURL
+		if _, ok := result[urlInfo.userGUID]; !ok {
+			result[urlInfo.userGUID] = make(map[string]*entities.URLInfo)
+		}
+		result[urlInfo.userGUID][urlInfo.originalURL] = &entities.URLInfo{
+			ShortenURL: urlInfo.shortenURL,
+			IsDeleted:  urlInfo.isDeleted,
 		}
 	}
 
@@ -140,7 +145,7 @@ func (d *DBStorage) GetByOriginalURLForUser(originalURL, userGUID string) (strin
 	}
 
 	if usersURLs, ok := urls[userGUID]; ok {
-		return usersURLs[originalURL], nil
+		return usersURLs[originalURL].ShortenURL, nil
 	}
 
 	return "", nil
@@ -169,7 +174,7 @@ func (d *DBStorage) Set(originalURL, shortenURL, userGUID string) error {
 		}
 	}
 
-	result, err := d.DB.ExecContext(ctx, "INSERT INTO user_urls (original_url, shorten_url, user_id) VALUES ($1, $2, $3)", originalURL, shortenURL, userID)
+	result, err := d.DB.ExecContext(ctx, "INSERT INTO user_urls (original_url, shorten_url, user_id, is_deleted) VALUES ($1, $2, $3, false)", originalURL, shortenURL, userID)
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok && err.Code == pgerrcode.UniqueViolation {
 			return customerrors.ErrDuplicateEntity

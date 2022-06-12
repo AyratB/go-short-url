@@ -1,16 +1,18 @@
 package storage
 
+import "github.com/AyratB/go-short-url/internal/entities"
+
 type MemoryStorage struct {
-	shortUserURLs map[string]map[string]string // userGUID  : Original : shortURL
+	shortUserURLs map[string]map[string]*entities.URLInfo // userGUID  : Original : shortURL
 }
 
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
-		shortUserURLs: make(map[string]map[string]string),
+		shortUserURLs: make(map[string]map[string]*entities.URLInfo),
 	}
 }
 
-func (ms *MemoryStorage) GetAll() (map[string]map[string]string, error) {
+func (ms *MemoryStorage) GetAll() (map[string]map[string]*entities.URLInfo, error) {
 	return ms.shortUserURLs, nil
 }
 
@@ -18,7 +20,7 @@ func (ms *MemoryStorage) GetByOriginalURLForUser(originalURL, userGUID string) (
 	urls, _ := ms.GetAll()
 
 	if usersURLs, ok := urls[userGUID]; ok {
-		return usersURLs[originalURL], nil
+		return usersURLs[originalURL].ShortenURL, nil
 	}
 
 	return "", nil
@@ -26,11 +28,12 @@ func (ms *MemoryStorage) GetByOriginalURLForUser(originalURL, userGUID string) (
 
 func (ms *MemoryStorage) Set(originalURL, shortenURL, userGUID string) error {
 
-	if userURLs, ok := ms.shortUserURLs[userGUID]; ok {
-		userURLs[originalURL] = shortenURL
-	} else {
-		ms.shortUserURLs[userGUID] = make(map[string]string)
-		ms.shortUserURLs[userGUID][originalURL] = shortenURL
+	if _, ok := ms.shortUserURLs[userGUID]; !ok {
+		ms.shortUserURLs[userGUID] = make(map[string]*entities.URLInfo)
+	}
+	ms.shortUserURLs[userGUID][originalURL] = &entities.URLInfo{
+		ShortenURL: shortenURL,
+		IsDeleted:  false,
 	}
 	return nil
 }

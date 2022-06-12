@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/AyratB/go-short-url/internal/entities"
 	"os"
 )
 
@@ -22,12 +23,13 @@ func NewReader(fileName string) (*Reader, error) {
 	}, nil
 }
 
-func (r *Reader) ReadAll() (map[string]map[string]string, error) {
+func (r *Reader) ReadAll() (shortURLs map[string]map[string]*entities.URLInfo, err error) {
 
-	defer r.file.Close()
+	defer func() {
+		err = r.file.Close()
+	}()
 
-	shortURLs := make(map[string]map[string]string)
-	var err error
+	shortURLs = make(map[string]map[string]*entities.URLInfo)
 
 	for r.decoder.More() {
 		record := &Record{}
@@ -35,13 +37,15 @@ func (r *Reader) ReadAll() (map[string]map[string]string, error) {
 			return nil, err
 		}
 
-		if userData, ok := shortURLs[record.UserID]; ok {
-			userData[record.OriginalURL] = record.ShortenURL
-		} else {
-			shortURLs[record.UserID] = make(map[string]string)
-			shortURLs[record.UserID][record.OriginalURL] = record.ShortenURL
+		if _, ok := shortURLs[record.UserID]; !ok {
+			shortURLs[record.UserID] = make(map[string]*entities.URLInfo)
+		}
+
+		shortURLs[record.UserID][record.OriginalURL] = &entities.URLInfo{
+			ShortenURL: record.ShortenURL,
+			IsDeleted:  false,
 		}
 	}
 
-	return shortURLs, err
+	return
 }
