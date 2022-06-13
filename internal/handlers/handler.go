@@ -34,7 +34,7 @@ func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	var repo repositories.Repository
 	var err error
 
-	configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
+	// configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
 
 	if len(configs.DatabaseDSN) != 0 {
 		repo, err = storage.NewDBStorage(configs.DatabaseDSN)
@@ -296,6 +296,10 @@ func (h *Handler) DeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	// принимает список идентификаторов сокращённых URL для удаления в формате: [ "a", "b", "c", "d", ...]
 	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
 	var idsToDelete []string
 
