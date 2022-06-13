@@ -6,6 +6,11 @@ type MemoryStorage struct {
 	shortUserURLs map[string]map[string]*entities.URLInfo // userGUID  : Original : shortURL
 }
 
+func (ms *MemoryStorage) DeleteURLS(batches []string, userID string) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
 		shortUserURLs: make(map[string]map[string]*entities.URLInfo),

@@ -11,6 +11,11 @@ type FileStorage struct {
 	shortUserURLs map[string]map[string]*entities.URLInfo
 }
 
+func (f *FileStorage) DeleteURLS(batches []string, userID string) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewFileStorage(filePath string) (*FileStorage, error) {
 
 	w, err := service.NewWriter(filePath)

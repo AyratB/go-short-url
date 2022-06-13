@@ -16,6 +16,32 @@ type DBStorage struct {
 	shortUserURLs map[string]map[string]*entities.URLInfo // key - origin, Value - URLInfo
 }
 
+var upStmt *sql.Stmt
+
+func (d *DBStorage) DeleteURLS(batches []string, userGUID string) {
+
+	tx, err := d.DB.Begin()
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
+
+	ctx := context.Background()
+
+	txStmt := tx.StmtContext(ctx, upStmt)
+
+	userID, err := d.getUserByGUID(userGUID)
+	if err != nil {
+		return
+	}
+
+	if _, err = txStmt.ExecContext(ctx, pq.Array(batches), userID); err != nil {
+		return
+	}
+
+	tx.Commit()
+}
+
 type DBEntity struct {
 	originalURL string
 	shortenURL  string
@@ -38,6 +64,15 @@ func NewDBStorage(dsn string) (*DBStorage, error) {
 	dbStorage := &DBStorage{DB: db}
 
 	if err = dbStorage.initTables(); err != nil {
+		return nil, err
+	}
+
+	upStmt, err = db.Prepare(`
+UPDATE user_urls 
+SET is_deleted = TRUE
+WHERE shorten_url = any($1) AND user_id = $2;`)
+
+	if err != nil {
 		return nil, err
 	}
 
@@ -75,6 +110,9 @@ func (d *DBStorage) initTables() error {
 }
 
 func (d *DBStorage) CloseResources() error {
+	if upStmt != nil {
+		upStmt.Close()
+	}
 	return d.DB.Close()
 }
 

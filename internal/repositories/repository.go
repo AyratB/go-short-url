@@ -8,4 +8,5 @@ type Repository interface {
 	Set(originalURL, shortenURL, userGUID string) error
 	CloseResources() error
 	PingStorage() error
+	DeleteURLS(batches []string, userID string)
 }

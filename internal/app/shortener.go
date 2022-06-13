@@ -92,3 +92,7 @@ func (s *Shortener) GetAllSavedUserURLs(baseURL, userID string) ([]*URL, error) 
 func (s *Shortener) PingStorage() error {
 	return s.repo.PingStorage()
 }
+
+func (s *Shortener) DeleteURLS(batches []string, userID string) {
+	s.repo.DeleteURLS(batches, userID)
+}
