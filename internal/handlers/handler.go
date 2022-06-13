@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
+	"sync"
 )
 
 type PostURLRequest struct {
@@ -33,7 +34,7 @@ func NewHandler(configs *utils.Config) (*Handler, func() error, error) {
 	var repo repositories.Repository
 	var err error
 
-	//configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
+	// configs.DatabaseDSN = "postgres://postgres:test@localhost:5432/postgres?sslmode=disable"
 
 	if len(configs.DatabaseDSN) != 0 {
 		repo, err = storage.NewDBStorage(configs.DatabaseDSN)
@@ -196,15 +197,18 @@ func (h *Handler) GetURLHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	originalURL, err := h.sh.GetOriginalURL(shortenURL)
+	originalURL, isDeletedURL, err := h.sh.GetOriginalURL(shortenURL)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	w.Header().Set("Location", originalURL)
-	w.Header().Set("content-type", "text/plain; charset=utf-8")
-
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	if isDeletedURL {
+		w.WriteHeader(http.StatusGone)
+	} else {
+		w.Header().Set("Location", originalURL)
+		w.Header().Set("content-type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	}
 }
 
 func getUserGUID(r *http.Request) string {
@@ -281,4 +285,49 @@ func (h *Handler) GetAllSavedUserURLs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(resp)
+}
+
+func (h *Handler) DeleteHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Only DELETE requests are allowed by this route!", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// принимает список идентификаторов сокращённых URL для удаления в формате: [ "a", "b", "c", "d", ...]
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	var idsToDelete []string
+
+	if err = json.Unmarshal(b, &idsToDelete); err != nil {
+		http.Error(w, "Incorrect body JSON format", http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+
+	go h.deleteURLS(idsToDelete, getUserGUID(r))
+}
+
+func (h *Handler) deleteURLS(idsToDelete []string, userID string) {
+
+	workerCount := len(idsToDelete)/10 + 1
+	wg := &sync.WaitGroup{}
+
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+
+		go func(idsToDeleteBatch []string, userID string) {
+
+			defer wg.Done()
+			h.sh.DeleteURLS(idsToDeleteBatch, userID)
+
+		}(idsToDelete[i*10:], userID)
+	}
+
+	wg.Wait()
 }
